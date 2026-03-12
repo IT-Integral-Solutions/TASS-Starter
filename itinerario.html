@@ -789,41 +789,66 @@ async function exportarPDF() {
 }
 
 // ─── WHATSAPP ────────────────────────────────────────────────────────────────
-function enviarWP() {
+async function enviarWP() {
   const waCliente = (clienteData?.wa || '').replace(/\D/g,'');
   if (!waCliente) {
     alert('El cliente no tiene numero de WhatsApp registrado.');
     return;
   }
-  const nombre = clienteData?.nom || '';
-  const agencia = params?.agente?.agencia || params?.agente?.nombre || 'Con Magui a Disney';
-  const dias = diasGenerados.length;
-  const parques = diasGenerados.filter(d => d.tipo === 'disney' || d.tipo === 'universal').length;
 
-  // Link al itinerario online con modo=cliente (sin toolbar ni edición)
-  const baseUrl = window.location.href.split('?')[0];
-  const dataParam = new URLSearchParams(window.location.search).get('data') || '';
-  const linkItinerario = baseUrl + '?modo=cliente&data=' + dataParam;
+  const btn = document.querySelector('.tb-btn.wp');
+  const origTxt = btn.textContent;
+  btn.textContent = 'Generando link...';
+  btn.disabled = true;
 
-  const lineas = [
-    '*Tu itinerario de viaje a Orlando*',
-    '',
-    'Hola ' + nombre + '!',
-    '',
-    'Ya tenes listo tu itinerario personalizado:',
-    '*' + dias + ' dias* - *' + parques + ' dias de parque*',
-    '',
-    'Podes verlo completo abriendo este link:',
-    linkItinerario,
-    '',
-    'Cada dia tiene horarios y actividades planificadas para vos.',
-    'Ante cualquier consulta durante el viaje, escribime y lo ajustamos.',
-    '',
-    '_' + agencia + '_'
-  ];
-  const msg = lineas.join('\n');
-  const url = 'https://wa.me/' + waCliente + '?text=' + encodeURIComponent(msg);
-  window.open(url, '_blank');
+  try {
+    const nombre = clienteData?.nom || '';
+    const agencia = params?.agente?.agencia || params?.agente?.nombre || 'Con Magui a Disney';
+    const dias = diasGenerados.length;
+    const parques = diasGenerados.filter(d => d.tipo === 'disney' || d.tipo === 'universal').length;
+
+    // Construir URL larga con modo cliente
+    const baseUrl = window.location.href.split('?')[0];
+    const dataParam = new URLSearchParams(window.location.search).get('data') || '';
+    const urlLarga = baseUrl + '?modo=cliente&data=' + dataParam;
+
+    // Acortar con TinyURL (CORS-friendly, sin API key)
+    let linkFinal = urlLarga;
+    try {
+      const res = await fetch('https://tinyurl.com/api-create.php?url=' + encodeURIComponent(urlLarga));
+      if (res.ok) {
+        const short = await res.text();
+        if (short.startsWith('https://')) linkFinal = short.trim();
+      }
+    } catch(e) {
+      // Si falla el acortador, usar URL completa igual
+      console.warn('TinyURL no disponible, usando URL completa');
+    }
+
+    const lineas = [
+      '*Tu itinerario de viaje a Orlando*',
+      '',
+      'Hola ' + nombre + '!',
+      '',
+      'Ya tenes listo tu itinerario personalizado:',
+      '*' + dias + ' dias* - *' + parques + ' dias de parque*',
+      '',
+      'Podes verlo completo abriendo este link:',
+      linkFinal,
+      '',
+      'Cada dia tiene horarios y actividades planificadas para vos.',
+      'Ante cualquier consulta durante el viaje, escribime y lo ajustamos.',
+      '',
+      '_' + agencia + '_'
+    ];
+    const msg = lineas.join('\n');
+    const url = 'https://wa.me/' + waCliente + '?text=' + encodeURIComponent(msg);
+    window.open(url, '_blank');
+
+  } finally {
+    btn.textContent = origTxt;
+    btn.disabled = false;
+  }
 }
 
 // ─── INIT ────────────────────────────────────────────────────────────────────
