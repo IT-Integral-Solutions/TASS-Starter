@@ -169,8 +169,11 @@ body{font-family:'Montserrat',sans-serif;background:#F0EBE5;min-height:100vh;pad
   .itinerario{box-shadow:none!important;border-radius:0!important}
   .day-body{display:block!important}
   .day-head{cursor:default}
-  .day-confirmed,.day-toggle{display:none}
+  .day-confirmed,.day-toggle,.day-tipo-select{display:none!important}
   .bloque-texto,.notas-texto{border:none!important}
+  .day-card{page-break-inside:avoid;break-inside:avoid}
+  .bloque{page-break-inside:avoid;break-inside:avoid}
+  .day-notas{page-break-inside:avoid;break-inside:avoid}
 }
 
 /* ─── LOADING ────────────────────────────────────── */
@@ -222,7 +225,7 @@ body{font-family:'Montserrat',sans-serif;background:#F0EBE5;min-height:100vh;pad
     <div class="itin-header">
       <div class="hdr-inner">
         <div class="hdr-logo">
-          <img src="logo-con-magui.png" alt="Con Magui a Disney" onerror="this.style.display='none'">
+          <img src="logo-con-magui.png" alt="Con Magui a Disney" onerror="this.src='https://raw.githubusercontent.com/IT-Integral-Solutions/TASS-Starter/main/logo-con-magui.png';this.onerror=null;">
         </div>
         <div class="hdr-text">
           <div class="hdr-pre">✦ Itinerario Personalizado de Viaje ✦</div>
@@ -258,7 +261,7 @@ body{font-family:'Montserrat',sans-serif;background:#F0EBE5;min-height:100vh;pad
 
     <div class="itin-footer">
       <div class="footer-left">
-        <img src="logo-con-magui.png" alt="Con Magui a Disney" class="footer-logo-agencia" onerror="this.style.display='none'">
+        <img src="logo-con-magui.png" alt="Con Magui a Disney" class="footer-logo-agencia" onerror="this.src='https://raw.githubusercontent.com/IT-Integral-Solutions/TASS-Starter/main/logo-con-magui.png';this.onerror=null;">
         <div class="footer-agente-info">
           <div class="footer-nombre" id="footer-agente-nombre">Con Magui a Disney</div>
           <div class="footer-contacto" id="footer-agente-contacto"></div>
@@ -531,7 +534,7 @@ function renderDias(dias) {
           <div class="bloque-periodo">${b.periodo}</div>
         </div>
         <div class="bloque-content">
-          <div class="bloque-lbl">${b.label}</div>
+          <div class="bloque-lbl" contenteditable="true" spellcheck="false" style="outline:none;cursor:text">${b.label}</div>
           <textarea class="bloque-texto" rows="2" oninput="autoResize(this)">${b.texto}</textarea>
         </div>
       </div>
@@ -543,14 +546,29 @@ function renderDias(dias) {
           <div class="day-num"><span>${d.idx}</span></div>
           <div class="day-info">
             <div class="day-fecha">${formatFecha(d.fecha)}</div>
-            <div class="day-titulo">${d.titulo}</div>
+            <div class="day-titulo" ${d.tipo==='descanso'?'contenteditable="true" spellcheck="false" title="Hacé clic para editar el título"':''} style="${d.tipo==='descanso'?'cursor:text;outline:none;':''}">
+              ${d.titulo}
+            </div>
             <div class="day-subtitulo">${d.subtitulo}</div>
           </div>
           ${(d.tipo === 'descanso') ? `
-          <select class="day-tipo-select" onchange="cambiarTipoDia(${i},this.value)" onclick="event.stopPropagation()">
+          <select class="day-tipo-select" id="tipo-select-${i}" onchange="cambiarTipoDia(${i},this.value)" onclick="event.stopPropagation()">
             <option value="descanso" selected>🌴 Descanso</option>
-            <option value="disney">🏰 Disney</option>
-            <option value="universal">🎬 Universal</option>
+            <optgroup label="── Disney ──">
+              <option value="disney|Animal Kingdom">🏰 Animal Kingdom</option>
+              <option value="disney|EPCOT">🏰 EPCOT</option>
+              <option value="disney|Magic Kingdom">🏰 Magic Kingdom</option>
+              <option value="disney|Hollywood Studios">🏰 Hollywood Studios</option>
+              <option value="disney|Typhoon Lagoon">🌊 Typhoon Lagoon</option>
+              <option value="disney|Blizzard Beach">🌊 Blizzard Beach</option>
+              <option value="disney|Fantasia Gardens">⛳ Fantasia Gardens</option>
+            </optgroup>
+            <optgroup label="── Universal ──">
+              <option value="universal|Epic Universe">🎬 Epic Universe</option>
+              <option value="universal|Islands of Adventure">🎬 Islands of Adventure</option>
+              <option value="universal|Universal Studios Florida">🎬 Universal Studios</option>
+              <option value="universal|Volcano Bay">🌊 Volcano Bay</option>
+            </optgroup>
           </select>` : `
           <span class="day-badge ${d.tipo}">${
             d.tipo === 'disney' ? '🏰 Disney' :
@@ -580,17 +598,29 @@ function renderDias(dias) {
 }
 
 // ─── CONTROLES ───────────────────────────────────────────────────────────────
-function cambiarTipoDia(i, nuevoTipo) {
+function cambiarTipoDia(i, valor) {
   const d = diasGenerados[i];
+  const partes = valor.split('|');
+  const nuevoTipo = partes[0];
+  const nombreParque = partes[1] || null;
   d.tipo = nuevoTipo;
-  const head = document.querySelector(`#day-${i} .day-head`);
+
+  const head    = document.querySelector(`#day-${i} .day-head`);
+  const titEl   = document.querySelector(`#day-${i} .day-titulo`);
+  const subEl   = document.querySelector(`#day-${i} .day-subtitulo`);
+
   head.className = `day-head ${nuevoTipo}`;
-  // El selector permanece visible para seguir cambiando
-  // Actualizar también el subtítulo según tipo
-  const subEl = document.querySelector(`#day-${i} .day-subtitulo`);
-  if (nuevoTipo === 'disney' && subEl) subEl.textContent = '🏰 Día en Disney — editá los bloques abajo';
-  if (nuevoTipo === 'universal' && subEl) subEl.textContent = '🎬 Día en Universal — editá los bloques abajo';
-  if (nuevoTipo === 'descanso' && subEl) subEl.textContent = '🌴 Descanso y actividades opcionales';
+
+  if (nuevoTipo === 'disney' && nombreParque) {
+    if (titEl) { titEl.textContent = `🎢 ${nombreParque}`; titEl.removeAttribute('contenteditable'); titEl.style.cursor=''; }
+    if (subEl) subEl.textContent = `🏰 Día en Disney · Editá los bloques abajo`;
+  } else if (nuevoTipo === 'universal' && nombreParque) {
+    if (titEl) { titEl.textContent = `🎢 ${nombreParque}`; titEl.removeAttribute('contenteditable'); titEl.style.cursor=''; }
+    if (subEl) subEl.textContent = `🎬 Día en Universal · Editá los bloques abajo`;
+  } else {
+    if (titEl) { titEl.textContent = '🌴 Día libre'; titEl.setAttribute('contenteditable','true'); titEl.style.cursor='text'; }
+    if (subEl) subEl.textContent = '🌴 Descanso y actividades opcionales';
+  }
 }
 
 function toggleDay(i) {
@@ -635,29 +665,44 @@ async function exportarPDF() {
 
   try {
     const { jsPDF } = window.jspdf;
-    const doc = document.getElementById('itin-doc');
-    const canvas = await html2canvas(doc, {
-      scale: 1.5,
-      useCORS: true,
-      logging: false,
-      backgroundColor: '#ffffff'
-    });
-    const imgData = canvas.toDataURL('image/jpeg', 0.92);
     const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
     const pdfW = pdf.internal.pageSize.getWidth();
     const pdfH = pdf.internal.pageSize.getHeight();
-    const imgW = canvas.width;
-    const imgH = canvas.height;
-    const ratio = pdfW / imgW;
-    const totalH = imgH * ratio;
-    let posY = 0;
-    let page = 0;
-    while (posY < totalH) {
-      if (page > 0) pdf.addPage();
-      pdf.addImage(imgData, 'JPEG', 0, -posY, pdfW, totalH);
-      posY += pdfH;
-      page++;
+    const margin = 8;
+    const usableW = pdfW - margin * 2;
+
+    // Capturar sección por sección — nunca corta a la mitad de un bloque
+    const secciones = [
+      document.querySelector('.itin-header'),
+      document.querySelector('.itin-body .resumen'),
+      ...document.querySelectorAll('.day-card'),
+      document.querySelector('.disclaimer'),
+      document.querySelector('.itin-footer'),
+    ].filter(Boolean);
+
+    let cursorY = margin;
+    let primeraPagina = true;
+
+    for (const el of secciones) {
+      const canvas = await html2canvas(el, {
+        scale: 2, useCORS: true, logging: false,
+        backgroundColor: '#ffffff',
+        width: el.offsetWidth, windowWidth: 900,
+      });
+      const imgData = canvas.toDataURL('image/jpeg', 0.92);
+      const imgH = (canvas.height * usableW) / canvas.width;
+
+      // Si no entra en lo que queda de página, saltamos
+      if (!primeraPagina && cursorY + imgH > pdfH - margin) {
+        pdf.addPage();
+        cursorY = margin;
+      }
+
+      pdf.addImage(imgData, 'JPEG', margin, cursorY, usableW, imgH);
+      cursorY += imgH + 4;
+      primeraPagina = false;
     }
+
     const nombre = (clienteData?.nom || 'cliente').replace(/\s+/g,'-').toLowerCase();
     pdf.save(`itinerario-${nombre}-orlando.pdf`);
   } catch(e) {
