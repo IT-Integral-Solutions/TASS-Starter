@@ -12,7 +12,7 @@
         "nombre": "Animal Kingdom",
         "nivel_cansancio": "bajo",
         "duracion_horas": 6,
-        "mejor_momento": "maÃ±ana",
+        "mejor_momento": "maÃÂ±ana",
         "activo": true,
         "notas": "",
         "tipo": "Temático"
@@ -22,7 +22,7 @@
         "nombre": "EPCOT",
         "nivel_cansancio": "alto",
         "duracion_horas": 10,
-        "mejor_momento": "maÃ±ana",
+        "mejor_momento": "maÃÂ±ana",
         "activo": true,
         "notas": "",
         "tipo": "Temático",
@@ -44,7 +44,7 @@
         "nombre": "Hollywood Studios",
         "nivel_cansancio": "medio",
         "duracion_horas": 8,
-        "mejor_momento": "maÃ±ana",
+        "mejor_momento": "maÃÂ±ana",
         "activo": true,
         "notas": "",
         "tipo": "Temático",
@@ -55,7 +55,7 @@
         "nombre": "Typhoon Lagoon",
         "nivel_cansancio": "bajo",
         "duracion_horas": 6,
-        "mejor_momento": "maÃ±ana",
+        "mejor_momento": "maÃÂ±ana",
         "activo": true,
         "notas": "",
         "tipo": "Acuático"
@@ -65,7 +65,7 @@
         "nombre": "Blizzard Beach",
         "nivel_cansancio": "bajo",
         "duracion_horas": 6,
-        "mejor_momento": "maÃ±ana",
+        "mejor_momento": "maÃÂ±ana",
         "activo": true,
         "notas": "",
         "tipo": "Acuático"
@@ -78,8 +78,7 @@
         "Walmart / compras",
         "Shopping outlet",
         "Pileta del hotel",
-        "Disney Springs",
-        "Fantasia Gardens Miniature Golf"
+        "Disney Springs"
       ],
       "orden_parques": [
         "animal_kingdom",
@@ -87,8 +86,7 @@
         "typhoon_lagoon",
         "hollywood_studios",
         "blizzard_beach",
-        "magic_kingdom",
-        "fantasia_gardens"
+        "magic_kingdom"
       ],
       "notas_generales": ""
     }
@@ -100,7 +98,7 @@
         "nombre": "Islands of Adventure",
         "nivel_cansancio": "alto",
         "duracion_horas": 9,
-        "mejor_momento": "maÃ±ana",
+        "mejor_momento": "maÃÂ±ana",
         "activo": true,
         "notas": "",
         "tipo": "Temático",
@@ -111,7 +109,7 @@
         "nombre": "Universal Studios Florida",
         "nivel_cansancio": "medio",
         "duracion_horas": 8,
-        "mejor_momento": "maÃ±ana",
+        "mejor_momento": "maÃÂ±ana",
         "activo": true,
         "notas": "",
         "tipo": "Temático",
@@ -122,7 +120,7 @@
         "nombre": "Epic Universe",
         "nivel_cansancio": "alto",
         "duracion_horas": 10,
-        "mejor_momento": "maÃ±ana",
+        "mejor_momento": "maÃÂ±ana",
         "activo": true,
         "notas": "",
         "tipo": "Temático",
@@ -134,7 +132,7 @@
         "tipo": "Acuático",
         "nivel_cansancio": "bajo",
         "duracion_horas": 6,
-        "mejor_momento": "maÃ±ana",
+        "mejor_momento": "maÃÂ±ana",
         "activo": true,
         "notas": ""
       }
@@ -156,6 +154,8 @@
       "notas_generales": ""
     }
   },
-  "promociones_activas": [],
-  "ultimo_update": "2026-03-12T11:42:43.541Z"
+  "promociones_activas": [
+    "Dining plan + Summer kids"
+  ],
+  "ultimo_update": "2026-03-12T14:55:00.989Z"
 }
