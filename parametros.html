@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Con Magui — Configuración del Agente</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Dancing+Script:wght@600;700&family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --rose:#D4748F;--rose-d:#B5566A;--rose-p:#F2D4DC;--rose-pp:#FBF0F3;
+  --gold:#C8A84B;--gold-l:#E8C96A;--gold-p:#FBF4E0;
+  --violet:#9B7BB8;--vio-l:#C8B0DC;--vio-p:#EDE0F5;
+  --green:#5BAD7F;--green-d:#3A7A5A;
+  --blue:#2A7ACC;--blue-d:#1A5A9A;--blue-p:#EEF4FF;
+  --dark:#1A0A2E;--plum:#2A1A3E;
+  --gray:#666;--lgray:#AAA;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Montserrat',sans-serif;background:linear-gradient(150deg,#1A0A2E,#2A1A3E 40%,#0A0418);min-height:100vh;padding:0 0 80px}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(ellipse 60% 50% at 10% 15%,rgba(212,116,143,.15) 0%,transparent 55%),
+  radial-gradient(ellipse 50% 45% at 90% 8%,rgba(200,168,75,.12) 0%,transparent 52%),
+  radial-gradient(ellipse 40% 40% at 50% 90%,rgba(155,123,184,.1) 0%,transparent 50%)}
+
+/* ─── HERO ─────────────────────────────────────── */
+.hero{position:relative;z-index:1;text-align:center;padding:36px 20px 24px}
+.hero img.logo-main{width:90px;display:block;margin:0 auto 14px;filter:drop-shadow(0 4px 16px rgba(200,168,75,.4))}
+.hero h1{font-family:'Playfair Display',serif;font-size:clamp(22px,4vw,34px);color:#fff;line-height:.95;margin-bottom:5px}
+.hero h1 em{color:var(--gold-l);font-style:italic}
+.hero .sub{font-family:'Dancing Script',cursive;font-size:clamp(15px,3vw,20px);color:#F2D4DC;margin-bottom:12px}
+.hero .rule{width:220px;height:1px;margin:0 auto 12px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.6}
+.hero p{font-size:11.5px;color:rgba(255,255,255,.5);max-width:380px;margin:0 auto;line-height:1.7}
+
+/* ─── WRAPPER ───────────────────────────────────── */
+.wrap{max-width:680px;margin:0 auto;padding:0 14px;position:relative;z-index:1}
+
+/* ─── CARD ──────────────────────────────────────── */
+.card{background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 20px 70px rgba(0,0,0,.35);margin-bottom:18px}
+.stripe{height:4px;background:linear-gradient(90deg,var(--rose-d),#D4748F,var(--gold),var(--gold-l),var(--violet))}
+
+/* ─── SECTION HEADER ────────────────────────────── */
+.sec-hdr{padding:18px 24px 0;display:flex;align-items:center;gap:10px;border-bottom:1.5px solid rgba(0,0,0,.06);padding-bottom:14px;margin-bottom:0}
+.sec-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.sec-icon.rose{background:var(--rose-pp);} 
+.sec-icon.gold{background:var(--gold-p);}
+.sec-icon.violet{background:var(--vio-p);}
+.sec-icon.green{background:#F0FFF5;}
+.sec-icon.blue{background:var(--blue-p);}
+.sec-title{font-family:'Playfair Display',serif;font-weight:700;font-size:16px;color:var(--dark)}
+.sec-sub{font-size:10.5px;color:var(--lgray);margin-top:1px}
+.sec-body{padding:18px 24px 22px}
+
+/* ─── FIELDS ─────────────────────────────────────── */
+.fld{margin-bottom:14px}
+.fld>label,.flbl{display:block;font-size:9.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--dark);margin-bottom:5px}
+.req{color:var(--rose-d)}
+input[type=text],input[type=tel],input[type=email],input[type=number],select,textarea{
+  width:100%;padding:10px 12px;border-radius:8px;border:1.5px solid rgba(0,0,0,.11);
+  font-family:'Montserrat',sans-serif;font-size:13px;color:var(--dark);outline:none;
+  transition:border-color .15s,box-shadow .15s;background:#fff}
+input:focus,select:focus,textarea:focus{border-color:var(--rose-d);box-shadow:0 0 0 3px rgba(181,86,106,.09)}
+textarea{resize:vertical;min-height:65px;line-height:1.6}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.hint{font-size:10px;color:var(--lgray);margin-top:4px;line-height:1.5}
+
+/* ─── PARK ROWS ──────────────────────────────────── */
+.park-list{display:flex;flex-direction:column;gap:8px}
+.park-row{display:grid;grid-template-columns:28px 1fr 130px 36px;align-items:center;gap:8px;
+  padding:10px 12px;border-radius:10px;border:1.5px solid rgba(0,0,0,.09);background:#FAFAFA;transition:all .15s}
+.park-row:hover{border-color:rgba(200,168,75,.3);background:#FFFDF7}
+.park-row.inactive{opacity:.45}
+.park-drag{color:var(--lgray);cursor:grab;font-size:16px;text-align:center;user-select:none}
+.park-drag:active{cursor:grabbing}
+.park-name{font-size:13px;font-weight:600;color:var(--dark)}
+.park-type{font-size:9.5px;color:var(--lgray);font-weight:500}
+.park-intensity select{padding:6px 8px;font-size:11px;border-radius:6px;border:1.5px solid rgba(0,0,0,.1)}
+.park-toggle{width:30px;height:30px;border-radius:7px;border:1.5px solid rgba(0,0,0,.1);background:#fff;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .15s}
+.park-toggle:hover{border-color:var(--rose-d);background:var(--rose-pp)}
+.park-toggle.on{background:var(--green);border-color:var(--green);color:#fff}
+.park-toggle.off{background:#fff;border-color:rgba(0,0,0,.1);color:var(--lgray)}
+
+/* ─── ORDER PILLS ────────────────────────────────── */
+.order-wrap{margin-top:14px}
+.order-label{font-size:9.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--dark);margin-bottom:8px;display:block}
+.order-list{display:flex;flex-wrap:wrap;gap:6px}
+.order-pill{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:100px;
+  border:1.5px solid rgba(200,168,75,.3);background:var(--gold-p);cursor:grab;user-select:none;transition:all .15s}
+.order-pill:hover{border-color:var(--gold);box-shadow:0 2px 8px rgba(200,168,75,.2)}
+.order-pill.dragging{opacity:.4}
+.order-num{width:18px;height:18px;border-radius:50%;background:var(--gold);color:#fff;
+  font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.order-name{font-size:11px;font-weight:600;color:var(--dark)}
+
+/* ─── RULES ─────────────────────────────────────── */
+.rule-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.rule-box{padding:12px;border-radius:10px;border:1.5px solid rgba(0,0,0,.08);background:#FAFAFA}
+.rule-lbl{font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--lgray);margin-bottom:6px}
+.rule-val{font-size:13px;font-weight:700;color:var(--dark)}
+.rule-box input[type=number]{padding:6px 10px;font-size:14px;font-weight:700;text-align:center;width:70px;border-radius:7px}
+.rule-box select{padding:7px 10px;font-size:12px}
+
+/* ─── DESCANSO ACTIVITIES ────────────────────────── */
+.act-list{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+.act-item{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;
+  border:1.5px solid rgba(0,0,0,.08);background:#FAFAFA}
+.act-item input[type=text]{border:none;background:transparent;padding:0;font-size:13px;flex:1;outline:none}
+.act-remove{width:24px;height:24px;border-radius:6px;border:none;background:transparent;
+  color:var(--lgray);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .12s;flex-shrink:0}
+.act-remove:hover{background:var(--rose-pp);color:var(--rose-d)}
+.btn-add{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;
+  border:1.5px dashed rgba(0,0,0,.15);background:transparent;color:var(--gray);
+  font-family:'Montserrat',sans-serif;font-size:11.5px;font-weight:600;cursor:pointer;transition:all .15s;width:100%}
+.btn-add:hover{border-color:var(--gold);color:var(--dark);background:var(--gold-p)}
+
+/* ─── PROMOS ─────────────────────────────────────── */
+.promo-list{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+.promo-item{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;
+  border:1.5px solid rgba(91,173,127,.25);background:#F5FFF8}
+.promo-item input[type=text]{border:none;background:transparent;padding:0;font-size:12.5px;flex:1;outline:none;color:var(--green-d)}
+.promo-remove{width:24px;height:24px;border-radius:6px;border:none;background:transparent;
+  color:rgba(91,173,127,.5);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .12s;flex-shrink:0}
+.promo-remove:hover{background:var(--rose-pp);color:var(--rose-d)}
+.promo-empty{font-size:11.5px;color:var(--lgray);font-style:italic;text-align:center;padding:12px;
+  border:1.5px dashed rgba(0,0,0,.1);border-radius:8px}
+
+/* ─── SAVE BUTTON ────────────────────────────────── */
+.save-wrap{padding:0 14px}
+.btn-save{width:100%;padding:16px;border-radius:14px;border:none;cursor:pointer;
+  background:linear-gradient(135deg,var(--rose-d),#D4748F 50%,var(--gold));
+  color:#fff;font-family:'Playfair Display',serif;font-size:18px;font-weight:700;
+  letter-spacing:.5px;box-shadow:0 8px 30px rgba(181,86,106,.35);transition:all .2s;position:relative;overflow:hidden}
+.btn-save:hover{transform:translateY(-2px);box-shadow:0 12px 40px rgba(181,86,106,.45)}
+.btn-save:active{transform:translateY(0)}
+.btn-save:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.btn-save .spinner{display:none;width:18px;height:18px;border:2px solid rgba(255,255,255,.3);
+  border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;margin:0 auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ─── TOAST ─────────────────────────────────────── */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
+  padding:12px 24px;border-radius:12px;font-size:13px;font-weight:600;
+  box-shadow:0 8px 30px rgba(0,0,0,.25);opacity:0;transition:all .3s;z-index:1000;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.ok{background:var(--green);color:#fff}
+.toast.err{background:var(--rose-d);color:#fff}
+
+/* ─── FOOTER ─────────────────────────────────────── */
+.footer{position:relative;z-index:1;text-align:center;padding:28px 20px 0;display:flex;flex-direction:column;align-items:center;gap:8px}
+.footer-dev{display:flex;align-items:center;gap:8px;opacity:.55;transition:opacity .2s}
+.footer-dev:hover{opacity:.85}
+.footer-dev img{height:22px;filter:brightness(0) invert(1)}
+.footer-txt{font-size:9.5px;color:rgba(255,255,255,.7);letter-spacing:.5px;text-transform:uppercase}
+
+/* ─── RESPONSIVE ─────────────────────────────────── */
+@media(max-width:500px){
+  .park-row{grid-template-columns:24px 1fr;grid-template-rows:auto auto}
+  .park-intensity,.park-toggle{grid-column:2}
+  .rule-grid{grid-template-columns:1fr}
+  .row2{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <img class="logo-main" src="https://raw.githubusercontent.com/IT-Integral-Solutions/TASS-Starter/main/logo-con-magui.png" alt="Con Magui a Disney" onerror="this.style.display='none'">
+  <h1>Configuración <em>del Agente</em></h1>
+  <p class="sub">Parámetros del itinerario</p>
+  <div class="rule"></div>
+  <p>Personalizá cómo se arman los itinerarios para tus clientes.<br>Los cambios se guardan automáticamente en el sistema.</p>
+</div>
+
+<div class="wrap">
+
+  <!-- DATOS DEL AGENTE -->
+  <div class="card">
+    <div class="stripe"></div>
+    <div class="sec-hdr">
+      <div class="sec-icon rose">👤</div>
+      <div>
+        <div class="sec-title">Datos del Agente</div>
+        <div class="sec-sub">Información que aparece en los itinerarios</div>
+      </div>
+    </div>
+    <div class="sec-body">
+      <div class="row2">
+        <div class="fld">
+          <label>Nombre del agente</label>
+          <input type="text" id="ag-nombre" placeholder="Ej: Magui González">
+        </div>
+        <div class="fld">
+          <label>Nombre de la agencia</label>
+          <input type="text" id="ag-agencia" placeholder="Ej: Con Magui a Disney">
+        </div>
+      </div>
+      <div class="row2">
+        <div class="fld">
+          <label>WhatsApp</label>
+          <input type="tel" id="ag-wa" placeholder="Ej: 5491112345678">
+        </div>
+        <div class="fld">
+          <label>Email</label>
+          <input type="email" id="ag-email" placeholder="Ej: hola@agencia.com">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DISNEY -->
+  <div class="card">
+    <div class="stripe"></div>
+    <div class="sec-hdr">
+      <div class="sec-icon gold">🏰</div>
+      <div>
+        <div class="sec-title">Parques Disney</div>
+        <div class="sec-sub">Intensidad, orden y reglas para armar el itinerario</div>
+      </div>
+    </div>
+    <div class="sec-body">
+
+      <span class="flbl">Parques activos e intensidad</span>
+      <div class="hint" style="margin-bottom:10px">Activá/desactivá parques y definí el nivel de esfuerzo físico. Arrastrá para reordenar.</div>
+      <div class="park-list" id="disney-parks">
+        <!-- generado por JS -->
+      </div>
+
+      <div class="order-wrap">
+        <span class="order-label">Orden recomendado de visita</span>
+        <div class="order-list" id="disney-order">
+          <!-- generado por JS -->
+        </div>
+        <div class="hint">Arrastrá para cambiar el orden en que se asignan los parques al itinerario.</div>
+      </div>
+
+      <div style="margin-top:18px">
+        <div class="rule-grid">
+          <div class="rule-box">
+            <div class="rule-lbl">Días de parque antes de descanso</div>
+            <input type="number" id="dis-descanso" min="1" max="5" value="2">
+          </div>
+          <div class="rule-box">
+            <div class="rule-lbl">Actividad día de llegada</div>
+            <select id="dis-llegada">
+              <option value="disney_springs">Disney Springs</option>
+              <option value="descanso">Solo descanso en hotel</option>
+              <option value="parque_agua">Parque acuático</option>
+              <option value="libre">Libre según horario</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:16px">
+        <span class="flbl">Actividades para días de descanso</span>
+        <div class="act-list" id="dis-act-list"></div>
+        <button class="btn-add" onclick="addActividad('dis')">＋ Agregar actividad</button>
+      </div>
+
+      <div class="fld" style="margin-top:16px">
+        <label>Notas generales Disney</label>
+        <textarea id="dis-notas" placeholder="Tips, recomendaciones generales, información importante para los viajeros..."></textarea>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- UNIVERSAL -->
+  <div class="card">
+    <div class="stripe"></div>
+    <div class="sec-hdr">
+      <div class="sec-icon violet">🎬</div>
+      <div>
+        <div class="sec-title">Parques Universal</div>
+        <div class="sec-sub">Intensidad, orden y reglas para armar el itinerario</div>
+      </div>
+    </div>
+    <div class="sec-body">
+
+      <span class="flbl">Parques activos e intensidad</span>
+      <div class="hint" style="margin-bottom:10px">Activá/desactivá parques y definí el nivel de esfuerzo físico.</div>
+      <div class="park-list" id="universal-parks">
+        <!-- generado por JS -->
+      </div>
+
+      <div class="order-wrap">
+        <span class="order-label">Orden recomendado de visita</span>
+        <div class="order-list" id="universal-order"></div>
+        <div class="hint">Arrastrá para cambiar el orden en que se asignan los parques al itinerario.</div>
+      </div>
+
+      <div style="margin-top:18px">
+        <div class="rule-grid">
+          <div class="rule-box">
+            <div class="rule-lbl">Días de parque antes de descanso</div>
+            <input type="number" id="uni-descanso" min="1" max="5" value="2">
+          </div>
+          <div class="rule-box">
+            <div class="rule-lbl">Actividad día de llegada</div>
+            <select id="uni-llegada">
+              <option value="citywalk">CityWalk</option>
+              <option value="descanso">Solo descanso en hotel</option>
+              <option value="volcano_bay">Volcano Bay</option>
+              <option value="libre">Libre según horario</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:16px">
+        <span class="flbl">Actividades para días de descanso</span>
+        <div class="act-list" id="uni-act-list"></div>
+        <button class="btn-add" onclick="addActividad('uni')">＋ Agregar actividad</button>
+      </div>
+
+      <div class="fld" style="margin-top:16px">
+        <label>Notas generales Universal</label>
+        <textarea id="uni-notas" placeholder="Tips, recomendaciones generales, información importante para los viajeros..."></textarea>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- PROMOCIONES -->
+  <div class="card">
+    <div class="stripe"></div>
+    <div class="sec-hdr">
+      <div class="sec-icon green">🎁</div>
+      <div>
+        <div class="sec-title">Promociones Activas</div>
+        <div class="sec-sub">Se muestran como tips destacados en el itinerario</div>
+      </div>
+    </div>
+    <div class="sec-body">
+      <div class="promo-list" id="promo-list"></div>
+      <div class="promo-empty" id="promo-empty">No hay promociones activas. Agregá una abajo.</div>
+      <button class="btn-add" onclick="addPromo()" style="margin-top:4px">＋ Agregar promoción</button>
+      <div class="hint" style="margin-top:8px">Escribí libremente: descuentos, beneficios de temporada, tickets gratis, etc.</div>
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+
+<!-- SAVE -->
+<div class="save-wrap">
+  <button class="btn-save" id="btn-save" onclick="guardarParametros()">
+    <span id="btn-txt">✦ Guardar Configuración</span>
+    <div class="spinner" id="btn-spinner"></div>
+  </button>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div class="footer-dev">
+    <img src="https://raw.githubusercontent.com/IT-Integral-Solutions/IT-Integral-Solutions-Web/main/asset/img/logo-horizontal-transparent-it.png" alt="IT-Integral Solutions">
+  </div>
+  <div class="footer-txt">Desarrollado por IT-Integral Solutions</div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── CONSTANTES ─────────────────────────────────────────────────────────────
+const WORKER_URL = 'https://tass-params-worker.it-integral-solution.workers.dev/parametros';
+
+const DISNEY_PARKS_DEFAULT = [
+  {id:'animal_kingdom',   nombre:'Animal Kingdom',        tipo:'Temático',   intensidad:'bajo',  activo:true},
+  {id:'epcot',            nombre:'EPCOT',                 tipo:'Temático',   intensidad:'alto',  activo:true},
+  {id:'magic_kingdom',    nombre:'Magic Kingdom',         tipo:'Temático',   intensidad:'alto',  activo:true},
+  {id:'hollywood_studios',nombre:'Hollywood Studios',     tipo:'Temático',   intensidad:'medio', activo:true},
+  {id:'typhoon_lagoon',   nombre:'Typhoon Lagoon',        tipo:'Acuático',   intensidad:'bajo',  activo:true},
+  {id:'blizzard_beach',   nombre:'Blizzard Beach',        tipo:'Acuático',   intensidad:'bajo',  activo:true},
+];
+
+const UNIVERSAL_PARKS_DEFAULT = [
+  {id:'islands_of_adventure', nombre:'Islands of Adventure',    tipo:'Temático', intensidad:'alto',  activo:true},
+  {id:'universal_studios',    nombre:'Universal Studios Florida',tipo:'Temático', intensidad:'medio', activo:true},
+  {id:'epic_universe',        nombre:'Epic Universe',           tipo:'Temático', intensidad:'alto',  activo:true},
+  {id:'volcano_bay',          nombre:'Volcano Bay',             tipo:'Acuático', intensidad:'bajo',  activo:true},
+];
+
+// ─── ESTADO ──────────────────────────────────────────────────────────────────
+let disneyParks = JSON.parse(JSON.stringify(DISNEY_PARKS_DEFAULT));
+let universalParks = JSON.parse(JSON.stringify(UNIVERSAL_PARKS_DEFAULT));
+let disActList = ['Walmart / compras','Shopping outlet','Pileta del hotel','Disney Springs'];
+let uniActList = ['CityWalk','Pileta del hotel','Compras'];
+let promoList = [];
+let disneyOrder = disneyParks.filter(p=>p.activo).map(p=>p.id);
+let universalOrder = universalParks.filter(p=>p.activo).map(p=>p.id);
+
+// ─── RENDER PARKS ────────────────────────────────────────────────────────────
+function renderParks(dest) {
+  const parks = dest === 'disney' ? disneyParks : universalParks;
+  const container = document.getElementById(dest + '-parks');
+  container.innerHTML = parks.map((p, i) => `
+    <div class="park-row ${p.activo ? '' : 'inactive'}" id="pr-${dest}-${p.id}" draggable="true"
+      ondragstart="dragStart(event,'${dest}',${i})" ondragover="dragOver(event)" ondrop="dragDrop(event,'${dest}',${i})">
+      <div class="park-drag">⠿</div>
+      <div>
+        <div class="park-name">${p.nombre}</div>
+        <div class="park-type">${p.tipo}</div>
+      </div>
+      <div class="park-intensity">
+        <select onchange="setIntensidad('${dest}',${i},this.value)" ${p.activo ? '' : 'disabled'}>
+          <option value="bajo"  ${p.intensidad==='bajo'  ?'selected':''}>🟢 Bajo</option>
+          <option value="medio" ${p.intensidad==='medio' ?'selected':''}>🟡 Moderado</option>
+          <option value="alto"  ${p.intensidad==='alto'  ?'selected':''}>🔴 Intenso</option>
+        </select>
+      </div>
+      <button class="park-toggle ${p.activo ? 'on' : 'off'}" 
+        onclick="togglePark('${dest}',${i})" title="${p.activo ? 'Desactivar' : 'Activar'}">
+        ${p.activo ? '✓' : '○'}
+      </button>
+    </div>
+  `).join('');
+  renderOrder(dest);
+}
+
+function renderOrder(dest) {
+  const parks = dest === 'disney' ? disneyParks : universalParks;
+  const order = dest === 'disney' ? disneyOrder : universalOrder;
+  const container = document.getElementById(dest + '-order');
+  const activeParkMap = {};
+  parks.filter(p => p.activo).forEach(p => activeParkMap[p.id] = p.nombre);
+  // filtrar orden a solo activos
+  const filteredOrder = order.filter(id => activeParkMap[id]);
+  // agregar activos que no estén en el orden
+  parks.filter(p => p.activo).forEach(p => {
+    if (!filteredOrder.includes(p.id)) filteredOrder.push(p.id);
+  });
+  if (dest === 'disney') disneyOrder = filteredOrder;
+  else universalOrder = filteredOrder;
+
+  container.innerHTML = filteredOrder.map((id, i) => `
+    <div class="order-pill" draggable="true" data-id="${id}"
+      ondragstart="orderDragStart(event,'${dest}',${i})" 
+      ondragover="event.preventDefault()" 
+      ondrop="orderDrop(event,'${dest}',${i})">
+      <div class="order-num">${i + 1}</div>
+      <div class="order-name">${activeParkMap[id] || id}</div>
+    </div>
+  `).join('');
+}
+
+function togglePark(dest, idx) {
+  const parks = dest === 'disney' ? disneyParks : universalParks;
+  parks[idx].activo = !parks[idx].activo;
+  renderParks(dest);
+}
+
+function setIntensidad(dest, idx, val) {
+  const parks = dest === 'disney' ? disneyParks : universalParks;
+  parks[idx].intensidad = val;
+}
+
+// ─── DRAG & DROP PARKS ───────────────────────────────────────────────────────
+let dragSrcDest = null, dragSrcIdx = null;
+function dragStart(e, dest, idx) { dragSrcDest = dest; dragSrcIdx = idx; e.dataTransfer.effectAllowed = 'move'; }
+function dragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
+function dragDrop(e, dest, idx) {
+  e.preventDefault();
+  if (dragSrcDest !== dest || dragSrcIdx === idx) return;
+  const parks = dest === 'disney' ? disneyParks : universalParks;
+  const [moved] = parks.splice(dragSrcIdx, 1);
+  parks.splice(idx, 0, moved);
+  renderParks(dest);
+}
+
+// ─── DRAG & DROP ORDER ───────────────────────────────────────────────────────
+let orderDragDest = null, orderDragIdx = null;
+function orderDragStart(e, dest, idx) { orderDragDest = dest; orderDragIdx = idx; }
+function orderDrop(e, dest, idx) {
+  e.preventDefault();
+  if (orderDragDest !== dest || orderDragIdx === idx) return;
+  const order = dest === 'disney' ? disneyOrder : universalOrder;
+  const [moved] = order.splice(orderDragIdx, 1);
+  order.splice(idx, 0, moved);
+  renderOrder(dest);
+}
+
+// ─── ACTIVIDADES ─────────────────────────────────────────────────────────────
+function renderActividades(prefix, list) {
+  const container = document.getElementById(prefix + '-act-list');
+  container.innerHTML = list.map((a, i) => `
+    <div class="act-item">
+      <span style="font-size:14px">🎯</span>
+      <input type="text" value="${a}" placeholder="Actividad de descanso..."
+        onchange="updateActividad('${prefix}',${i},this.value)">
+      <button class="act-remove" onclick="removeActividad('${prefix}',${i})">×</button>
+    </div>
+  `).join('');
+}
+
+function addActividad(prefix) {
+  if (prefix === 'dis') { disActList.push(''); renderActividades('dis', disActList); }
+  else { uniActList.push(''); renderActividades('uni', uniActList); }
+}
+
+function updateActividad(prefix, idx, val) {
+  if (prefix === 'dis') disActList[idx] = val;
+  else uniActList[idx] = val;
+}
+
+function removeActividad(prefix, idx) {
+  if (prefix === 'dis') { disActList.splice(idx, 1); renderActividades('dis', disActList); }
+  else { uniActList.splice(idx, 1); renderActividades('uni', uniActList); }
+}
+
+// ─── PROMOCIONES ─────────────────────────────────────────────────────────────
+function renderPromos() {
+  const container = document.getElementById('promo-list');
+  const empty = document.getElementById('promo-empty');
+  empty.style.display = promoList.length ? 'none' : 'block';
+  container.innerHTML = promoList.map((p, i) => `
+    <div class="promo-item">
+      <span style="font-size:14px">🎁</span>
+      <input type="text" value="${p}" placeholder="Descripción de la promoción..."
+        onchange="updatePromo(${i},this.value)">
+      <button class="promo-remove" onclick="removePromo(${i})">×</button>
+    </div>
+  `).join('');
+}
+
+function addPromo() { promoList.push(''); renderPromos(); }
+function updatePromo(idx, val) { promoList[idx] = val; }
+function removePromo(idx) { promoList.splice(idx, 1); renderPromos(); }
+
+// ─── CARGAR PARÁMETROS ───────────────────────────────────────────────────────
+async function cargarParametros() {
+  try {
+    const res = await fetch(WORKER_URL);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data.error) return;
+
+    // Agente
+    if (data.agente) {
+      document.getElementById('ag-nombre').value  = data.agente.nombre  || '';
+      document.getElementById('ag-agencia').value = data.agente.agencia || '';
+      document.getElementById('ag-wa').value      = data.agente.wa      || '';
+      document.getElementById('ag-email').value   = data.agente.email   || '';
+    }
+    // Disney
+    if (data.disney) {
+      if (data.disney.parques) disneyParks = data.disney.parques;
+      if (data.disney.reglas) {
+        const r = data.disney.reglas;
+        document.getElementById('dis-descanso').value = r.descanso_cada_dias_parque || 2;
+        document.getElementById('dis-llegada').value  = r.dia_llegada || 'disney_springs';
+        if (r.actividades_descanso) disActList = [...r.actividades_descanso];
+        if (r.orden_parques) disneyOrder = [...r.orden_parques];
+        document.getElementById('dis-notas').value = r.notas_generales || '';
+      }
+    }
+    // Universal
+    if (data.universal) {
+      if (data.universal.parques) universalParks = data.universal.parques;
+      if (data.universal.reglas) {
+        const r = data.universal.reglas;
+        document.getElementById('uni-descanso').value = r.descanso_cada_dias_parque || 2;
+        document.getElementById('uni-llegada').value  = r.dia_llegada || 'citywalk';
+        if (r.actividades_descanso) uniActList = [...r.actividades_descanso];
+        if (r.orden_parques) universalOrder = [...r.orden_parques];
+        document.getElementById('uni-notas').value = r.notas_generales || '';
+      }
+    }
+    // Promos
+    if (data.promociones_activas) promoList = [...data.promociones_activas];
+
+  } catch(e) {
+    console.warn('No se pudieron cargar parámetros:', e);
+  } finally {
+    renderParks('disney');
+    renderParks('universal');
+    renderActividades('dis', disActList);
+    renderActividades('uni', uniActList);
+    renderPromos();
+  }
+}
+
+// ─── GUARDAR PARÁMETROS ──────────────────────────────────────────────────────
+async function guardarParametros() {
+  const btn = document.getElementById('btn-save');
+  const txt = document.getElementById('btn-txt');
+  const spinner = document.getElementById('btn-spinner');
+
+  btn.disabled = true;
+  txt.style.display = 'none';
+  spinner.style.display = 'block';
+
+  const payload = {
+    agente: {
+      nombre:  document.getElementById('ag-nombre').value.trim(),
+      agencia: document.getElementById('ag-agencia').value.trim(),
+      wa:      document.getElementById('ag-wa').value.trim(),
+      email:   document.getElementById('ag-email').value.trim(),
+    },
+    disney: {
+      parques: disneyParks,
+      reglas: {
+        descanso_cada_dias_parque: parseInt(document.getElementById('dis-descanso').value) || 2,
+        dia_llegada:               document.getElementById('dis-llegada').value,
+        actividades_descanso:      disActList.filter(a => a.trim()),
+        orden_parques:             disneyOrder,
+        notas_generales:           document.getElementById('dis-notas').value.trim(),
+      }
+    },
+    universal: {
+      parques: universalParks,
+      reglas: {
+        descanso_cada_dias_parque: parseInt(document.getElementById('uni-descanso').value) || 2,
+        dia_llegada:               document.getElementById('uni-llegada').value,
+        actividades_descanso:      uniActList.filter(a => a.trim()),
+        orden_parques:             universalOrder,
+        notas_generales:           document.getElementById('uni-notas').value.trim(),
+      }
+    },
+    promociones_activas: promoList.filter(p => p.trim()),
+  };
+
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast('✓ Configuración guardada correctamente', 'ok');
+    } else {
+      showToast('✗ Error al guardar. Intentá de nuevo.', 'err');
+    }
+  } catch(e) {
+    showToast('✗ Error de conexión. Verificá tu internet.', 'err');
+  } finally {
+    btn.disabled = false;
+    txt.style.display = 'block';
+    spinner.style.display = 'none';
+  }
+}
+
+// ─── TOAST ───────────────────────────────────────────────────────────────────
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => t.className = 'toast', 3500);
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+cargarParametros();
+</script>
+</body>
+</html>
