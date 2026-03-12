@@ -1,0 +1,133 @@
+{
+  "agente": {
+    "nombre": "",
+    "agencia": "",
+    "email": "",
+    "wa": ""
+  },
+  "disney": {
+    "parques": [
+      {
+        "id": "animal_kingdom",
+        "nombre": "Animal Kingdom",
+        "nivel_cansancio": "bajo",
+        "duracion_horas": 6,
+        "mejor_momento": "mañana",
+        "activo": true,
+        "notas": ""
+      },
+      {
+        "id": "epcot",
+        "nombre": "EPCOT",
+        "nivel_cansancio": "alto",
+        "duracion_horas": 10,
+        "mejor_momento": "mañana",
+        "activo": true,
+        "notas": ""
+      },
+      {
+        "id": "magic_kingdom",
+        "nombre": "Magic Kingdom",
+        "nivel_cansancio": "alto",
+        "duracion_horas": 10,
+        "mejor_momento": "noche",
+        "activo": true,
+        "notas": ""
+      },
+      {
+        "id": "hollywood_studios",
+        "nombre": "Hollywood Studios",
+        "nivel_cansancio": "medio",
+        "duracion_horas": 8,
+        "mejor_momento": "mañana",
+        "activo": true,
+        "notas": ""
+      },
+      {
+        "id": "typhoon_lagoon",
+        "nombre": "Typhoon Lagoon",
+        "nivel_cansancio": "bajo",
+        "duracion_horas": 6,
+        "mejor_momento": "mañana",
+        "activo": true,
+        "notas": ""
+      },
+      {
+        "id": "blizzard_beach",
+        "nombre": "Blizzard Beach",
+        "nivel_cansancio": "bajo",
+        "duracion_horas": 6,
+        "mejor_momento": "mañana",
+        "activo": true,
+        "notas": ""
+      }
+    ],
+    "reglas": {
+      "descanso_cada_dias_parque": 2,
+      "dia_llegada": "disney_springs",
+      "dia_salida": "checkout",
+      "actividades_descanso": [
+        "Walmart / compras",
+        "Shopping outlet",
+        "Pileta del hotel",
+        "Disney Springs"
+      ],
+      "orden_parques": [
+        "animal_kingdom",
+        "epcot",
+        "magic_kingdom",
+        "hollywood_studios"
+      ],
+      "notas_generales": ""
+    }
+  },
+  "universal": {
+    "parques": [
+      {
+        "id": "islands_of_adventure",
+        "nombre": "Islands of Adventure",
+        "nivel_cansancio": "alto",
+        "duracion_horas": 9,
+        "mejor_momento": "mañana",
+        "activo": true,
+        "notas": ""
+      },
+      {
+        "id": "universal_studios",
+        "nombre": "Universal Studios Florida",
+        "nivel_cansancio": "medio",
+        "duracion_horas": 8,
+        "mejor_momento": "mañana",
+        "activo": true,
+        "notas": ""
+      },
+      {
+        "id": "epic_universe",
+        "nombre": "Epic Universe",
+        "nivel_cansancio": "alto",
+        "duracion_horas": 10,
+        "mejor_momento": "mañana",
+        "activo": true,
+        "notas": ""
+      }
+    ],
+    "reglas": {
+      "descanso_cada_dias_parque": 2,
+      "dia_llegada": "citywalk",
+      "dia_salida": "checkout",
+      "actividades_descanso": [
+        "CityWalk",
+        "Pileta del hotel",
+        "Compras"
+      ],
+      "orden_parques": [
+        "islands_of_adventure",
+        "universal_studios",
+        "epic_universe"
+      ],
+      "notas_generales": ""
+    }
+  },
+  "promociones_activas": [],
+  "ultimo_update": ""
+}
