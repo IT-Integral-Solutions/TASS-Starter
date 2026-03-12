@@ -280,6 +280,19 @@ body{font-family:'Montserrat',sans-serif;background:#F0EBE5;min-height:100vh;pad
 // ─── CONSTANTES ──────────────────────────────────────────────────────────────
 const WORKER_URL = 'https://tass-params-worker.it-integral-solution.workers.dev/parametros';
 
+// Modo cliente: oculta toolbar y bloquea edición
+const urlP = new URLSearchParams(window.location.search);
+const MODO_CLIENTE = urlP.get('modo') === 'cliente';
+if (MODO_CLIENTE) {
+  document.addEventListener('DOMContentLoaded', () => {
+    const tb = document.getElementById('toolbar');
+    if (tb) tb.style.display = 'none';
+    // Ajustar padding del wrap (no hay toolbar fijo)
+    const wrap = document.getElementById('doc-wrap');
+    if (wrap) wrap.style.paddingTop = '24px';
+  });
+}
+
 const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const DIAS_SEM = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 
@@ -594,7 +607,29 @@ function renderDias(dias) {
   }).join('');
 
   // Auto-resize textareas después de render
-  setTimeout(() => document.querySelectorAll('textarea').forEach(autoResize), 100);
+  setTimeout(() => {
+    document.querySelectorAll('textarea').forEach(autoResize);
+    // En modo cliente: deshabilitar toda edición
+    if (MODO_CLIENTE) {
+      document.querySelectorAll('textarea').forEach(el => {
+        el.readOnly = true;
+        el.style.cursor = 'default';
+        el.style.color = '#444';
+      });
+      document.querySelectorAll('[contenteditable]').forEach(el => {
+        el.removeAttribute('contenteditable');
+        el.style.cursor = 'default';
+      });
+      document.querySelectorAll('.day-tipo-select').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.day-confirmed').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.day-toggle').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.notas-box').forEach(el => el.style.display = 'none');
+      // Expandir todos los días automáticamente para el cliente
+      document.querySelectorAll('.day-body').forEach(b => b.classList.add('open'));
+      // Hacer todos los day-head no clickeables
+      document.querySelectorAll('.day-head').forEach(h => h.style.cursor = 'default');
+    }
+  }, 100);
 }
 
 // ─── CONTROLES ───────────────────────────────────────────────────────────────
@@ -662,6 +697,7 @@ function cambiarTipoDia(i, valor) {
 }
 
 function toggleDay(i) {
+  if (MODO_CLIENTE) return; // cliente ve todo expandido, sin colapsar
   const body   = document.querySelector(`#day-${i} .day-body`);
   const toggle = document.querySelector(`#day-${i} .day-toggle`);
   body.classList.toggle('open');
@@ -764,8 +800,10 @@ function enviarWP() {
   const dias = diasGenerados.length;
   const parques = diasGenerados.filter(d => d.tipo === 'disney' || d.tipo === 'universal').length;
 
-  // Link al itinerario online — el cliente lo abre directo en el browser
-  const linkItinerario = window.location.href;
+  // Link al itinerario online con modo=cliente (sin toolbar ni edición)
+  const baseUrl = window.location.href.split('?')[0];
+  const dataParam = new URLSearchParams(window.location.search).get('data') || '';
+  const linkItinerario = baseUrl + '?modo=cliente&data=' + dataParam;
 
   const lineas = [
     '*Tu itinerario de viaje a Orlando*',
