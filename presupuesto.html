@@ -3164,42 +3164,5 @@ function _generarPDFConJsPDF(btn){
     <span style="color:rgba(255,255,255,.12);">© 2025 IT Integral Solutions</span>
   </div>
 </footer>
-<script>
-function abrirItinerario() {
-    // Obtener los datos del presupuesto
-    var parques = [];
-    document.querySelectorAll('.park-card:not(.removed)').forEach(function(card) {
-        parques.push(card.querySelector('.pc-name').textContent);
-    });
-    
-    var hoteles = [];
-    document.querySelectorAll('.opt-row:not(.is-rec)').forEach(function(row) {
-        var hotel = row.querySelector('.opt-hotel');
-        if(hotel) hoteles.push(hotel.textContent);
-    });
-    
-    // Crear contenido del itinerario
-    var contenido = "ITINERARIO CON MAGUI - ORLANDO\n\n";
-    contenido += "Parques seleccionados:\n";
-    parques.forEach(function(p, i) {
-        contenido += (i+1) + ". " + p + "\n";
-    });
-    
-    contenido += "\nOpciones de hotel:\n";
-    hoteles.forEach(function(h, i) {
-        contenido += (i+1) + ". " + h + "\n";
-    });
-    
-    // Abrir en nueva ventana
-    var ventana = window.open('', '_blank');
-    ventana.document.write('<html><head><title>Itinerario</title>');
-    ventana.document.write('<style>body{font-family:Arial;padding:20px;line-height:1.6}</style>');
-    ventana.document.write('</head><body>');
-    ventana.document.write('<h1>Itinerario de Viaje</h1>');
-    ventana.document.write('<pre>' + contenido + '</pre>');
-    ventana.document.write('</body></html>');
-    ventana.document.close();
-}
-</script>
 </body>
 </html>
