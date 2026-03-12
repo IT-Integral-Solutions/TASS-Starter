@@ -69,16 +69,6 @@
         "activo": true,
         "notas": "",
         "tipo": "Acuático"
-      },
-      {
-        "id": "fantasia_gardens",
-        "nombre": "Fantasia Gardens Miniature Golf",
-        "tipo": "Actividad",
-        "nivel_cansancio": "bajo",
-        "duracion_horas": 2,
-        "mejor_momento": "tarde",
-        "activo": true,
-        "notas": ""
       }
     ],
     "reglas": {
@@ -88,7 +78,8 @@
         "Walmart / compras",
         "Shopping outlet",
         "Pileta del hotel",
-        "Disney Springs"
+        "Disney Springs",
+        "Fantasia Gardens Miniature Golf"
       ],
       "orden_parques": [
         "animal_kingdom",
