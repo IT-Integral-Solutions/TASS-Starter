@@ -260,17 +260,18 @@ body{font-family:'Montserrat',sans-serif;background:#F0EBE5;min-height:100vh;pad
     </div>
 
     <div class="itin-footer">
-      <div class="footer-left">
+      <a href="https://www.conmaguiadisney.com" target="_blank" rel="noopener" class="footer-left" style="text-decoration:none;">
         <img src="https://raw.githubusercontent.com/IT-Integral-Solutions/TASS-Starter/main/asset/img/conmagui.png" alt="Con Magui a Disney" class="footer-logo-agencia">
         <div class="footer-agente-info">
           <div class="footer-nombre" id="footer-agente-nombre">Con Magui a Disney</div>
           <div class="footer-contacto" id="footer-agente-contacto"></div>
         </div>
-      </div>
-      <div class="footer-right">
+      </a>
+      <a href="https://www.itintegraltech.com" target="_blank" rel="noopener" class="footer-right" style="text-decoration:none;">
         <div class="footer-dev-label">Desarrollado por</div>
         <img src="https://raw.githubusercontent.com/IT-Integral-Solutions/IT-Integral-Solutions-Web/main/asset/img/logo-horizontal-transparent-it.png" alt="IT-Integral Solutions" class="footer-logo-it">
-      </div>
+        <div style="font-size:8px;color:rgba(255,255,255,.25);letter-spacing:.15em;margin-top:3px;">www.itintegraltech.com</div>
+      </a>
     </div>
 
   </div>
@@ -892,7 +893,12 @@ async function init() {
   const contactos = [];
   if (ag.wa) contactos.push(`📱 ${ag.wa}`);
   if (ag.email) contactos.push(`✉️ ${ag.email}`);
-  document.getElementById('footer-agente-contacto').textContent = contactos.join('  ·  ');
+  const contactoEl = document.getElementById('footer-agente-contacto');
+  contactoEl.innerHTML = contactos.map(c => {
+    if (c.includes('@')) return `<a href="mailto:${c.replace('✉️ ','')}" style="color:inherit;text-decoration:none;">${c}</a>`;
+    if (c.includes('📱')) return `<a href="https://wa.me/${c.replace(/\D/g,'')}" target="_blank" style="color:inherit;text-decoration:none;">${c}</a>`;
+    return c;
+  }).join('  ·  ');
 
   // Generar y renderizar días
   diasGenerados = generarDias(clienteData, params);

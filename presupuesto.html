@@ -35,12 +35,6 @@ body{background:#F0EBE5;font-family:'Montserrat',sans-serif;min-height:100vh;}
 .tb-btn:hover{background:rgba(200,168,75,.2);border-color:var(--gold-l);}
 .tb-btn.active{background:rgba(91,173,127,.22);border-color:#5BAD7F;color:#3A7A5A;}
 .tb-btn.export{background:linear-gradient(135deg,rgba(181,86,106,.85),rgba(155,123,184,.78));border-color:rgba(226,197,106,.5);color:white;}
-.tb-btn.itin{background:linear-gradient(135deg,rgba(42,122,204,.85),rgba(26,90,154,.85));border-color:rgba(100,180,255,.4);color:white;}
-.tb-btn.config{background:rgba(200,168,75,.15);border-color:rgba(200,168,75,.4);color:var(--gold-l);}
-.tb-itin-group{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:8px;
-  border:1.5px solid rgba(200,168,75,.45);background:rgba(200,168,75,.07);}
-.tb-itin-label{font-size:8.5px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;
-  color:rgba(200,168,75,.6);white-space:nowrap;margin-right:2px;}
 .tb-info{font-size:9.5px;color:rgba(255,255,255,.35);font-style:italic;margin-left:auto;}
 
 /* ─── WRAPPER ─────────────────────────────────── */
@@ -363,12 +357,6 @@ body.edit-on .price-edit-panel{display:flex;flex-wrap:wrap;align-items:center;}
   <button class="tb-btn" onclick="toggleSection('tickets-section')">🎢 Tickets</button>
   <div class="tb-sep"></div>
   <button class="tb-btn export" id="btn-export" onclick="exportarPDF()">🖨️ Exportar PDF</button>
-  <div class="tb-sep"></div>
-  <div class="tb-itin-group">
-    <span class="tb-itin-label">✦ Itinerario</span>
-    <button class="tb-btn itin" onclick="abrirItinerario()">🗓️ Generar Itinerario</button>
-    <button class="tb-btn config" onclick="window.open('parametros.html','_blank')">⚙️ Configuración</button>
-  </div>
   <span class="tb-info">Imprimir → Guardar como PDF · Sin márgenes</span>
 </div>
 
@@ -1595,18 +1583,6 @@ document.querySelectorAll('[data-editable]').forEach(el=>{
   el.addEventListener('keydown',e=>{if(e.key==='Enter')e.preventDefault();});
 });
 
-// ══ ITINERARIO ═══════════════════════════════════════════════════════════
-function abrirItinerario() {
-  // Reutiliza el mismo encoded data que ya está en la URL
-  const params = new URLSearchParams(window.location.search);
-  const data = params.get('data');
-  if (!data) {
-    alert('No hay datos de cliente. Abrí el presupuesto desde el formulario de consulta.');
-    return;
-  }
-  window.open('itinerario.html?data=' + data, '_blank');
-}
-
 // ══ EXTRAS TOGGLE (toolbar) ════════════════════════════════════════════
 function toggleExtra(id){
   const sec=document.getElementById(id);
@@ -2824,35 +2800,34 @@ function exportarPDF(){
 }
 </script>
 <footer style="background:#0B1628;padding:28px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-top:40px;print-color-adjust:exact;-webkit-print-color-adjust:exact;">
-  <div style="display:flex;align-items:center;gap:12px;">
-    <svg width="36" height="26" viewBox="0 0 52 38" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="8" cy="19" r="5" fill="none" stroke="#C9952A" stroke-width="1.5"/>
-      <circle cx="8" cy="19" r="2.5" fill="#C9952A"/>
-      <circle cx="44" cy="7" r="5" fill="none" stroke="#C9952A" stroke-width="1.5"/>
-      <circle cx="44" cy="7" r="2.5" fill="#C9952A"/>
-      <circle cx="44" cy="31" r="5" fill="none" stroke="rgba(201,149,42,0.45)" stroke-width="1.5"/>
-      <circle cx="44" cy="31" r="2.5" fill="rgba(201,149,42,0.35)"/>
-      <line x1="13" y1="16" x2="39" y2="9" stroke="url(#fg1p)" stroke-width="1.2" stroke-dasharray="2 2"/>
-      <line x1="13" y1="22" x2="39" y2="29" stroke="url(#fg2p)" stroke-width="1.2" stroke-dasharray="2 2"/>
-      <line x1="44" y1="12" x2="44" y2="26" stroke="rgba(201,149,42,0.2)" stroke-width="1" stroke-dasharray="2 2"/>
-      <defs>
-        <linearGradient id="fg1p" x1="13" y1="16" x2="39" y2="9" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stop-color="#C9952A"/><stop offset="100%" stop-color="rgba(201,149,42,0.55)"/>
-        </linearGradient>
-        <linearGradient id="fg2p" x1="13" y1="22" x2="39" y2="29" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stop-color="#C9952A"/><stop offset="100%" stop-color="rgba(201,149,42,0.35)"/>
-        </linearGradient>
-      </defs>
-    </svg>
+  <!-- Agencia -->
+  <a href="https://www.conmaguiadisney.com" target="_blank" rel="noopener"
+     style="display:flex;align-items:center;gap:12px;text-decoration:none;">
+    <img src="https://raw.githubusercontent.com/IT-Integral-Solutions/TASS-Starter/main/asset/img/conmagui.png"
+         alt="Con Magui a Disney"
+         style="height:52px;width:auto;filter:drop-shadow(0 2px 8px rgba(200,168,75,.35));">
     <div>
-      <div style="font-family:Rajdhani,sans-serif;font-weight:700;font-size:14px;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.6);"><span style="color:#C9952A;">IT</span>-Integral Solutions</div>
-      <div style="font-family:DM Sans,sans-serif;font-weight:300;font-size:9px;letter-spacing:.35em;text-transform:uppercase;color:rgba(255,255,255,.2);">Desarrollado por IT Integral Solutions</div>
+      <div style="font-family:Georgia,serif;font-size:13px;font-weight:700;color:white;letter-spacing:.02em;">Con Magui a Disney</div>
+      <div style="font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-top:2px;">www.conmaguiadisney.com</div>
     </div>
-  </div>
-  <div style="font-family:DM Sans,sans-serif;font-size:11px;color:rgba(255,255,255,.2);text-align:right;">
-    Sistema TASS · Con Magui a Disney<br>
-    <span style="color:rgba(255,255,255,.12);">© 2025 IT Integral Solutions</span>
-  </div>
+  </a>
+  <!-- Centro: mail agencia -->
+  <a href="mailto:info@conmaguiadisney.com"
+     style="font-size:11px;color:rgba(255,255,255,.35);text-decoration:none;text-align:center;transition:color .15s;"
+     onmouseover="this.style.color='rgba(200,168,75,.8)'" onmouseout="this.style.color='rgba(255,255,255,.35)'">
+    ✉️ info@conmaguiadisney.com
+  </a>
+  <!-- IT Integral -->
+  <a href="https://www.itintegraltech.com" target="_blank" rel="noopener"
+     style="display:flex;align-items:center;gap:10px;text-decoration:none;">
+    <div style="text-align:right;">
+      <div style="font-size:8px;letter-spacing:.25em;text-transform:uppercase;color:rgba(255,255,255,.25);margin-bottom:3px;">Desarrollado por</div>
+      <img src="https://raw.githubusercontent.com/IT-Integral-Solutions/IT-Integral-Solutions-Web/main/asset/img/logo-horizontal-transparent-it.png"
+           alt="IT-Integral Solutions"
+           style="height:22px;width:auto;opacity:.55;filter:brightness(0) invert(1);">
+      <div style="font-size:8px;color:rgba(255,255,255,.18);letter-spacing:.15em;margin-top:2px;">www.itintegraltech.com</div>
+    </div>
+  </a>
 </footer>
 </body>
 </html>
