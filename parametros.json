@@ -14,7 +14,8 @@
         "duracion_horas": 6,
         "mejor_momento": "mañana",
         "activo": true,
-        "notas": ""
+        "notas": "",
+        "tipo": "Temático"
       },
       {
         "id": "epcot",
@@ -23,7 +24,8 @@
         "duracion_horas": 10,
         "mejor_momento": "mañana",
         "activo": true,
-        "notas": ""
+        "notas": "",
+        "tipo": "Temático"
       },
       {
         "id": "magic_kingdom",
@@ -32,7 +34,8 @@
         "duracion_horas": 10,
         "mejor_momento": "noche",
         "activo": true,
-        "notas": ""
+        "notas": "",
+        "tipo": "Temático"
       },
       {
         "id": "hollywood_studios",
@@ -41,7 +44,8 @@
         "duracion_horas": 8,
         "mejor_momento": "mañana",
         "activo": true,
-        "notas": ""
+        "notas": "",
+        "tipo": "Temático"
       },
       {
         "id": "typhoon_lagoon",
@@ -50,7 +54,8 @@
         "duracion_horas": 6,
         "mejor_momento": "mañana",
         "activo": true,
-        "notas": ""
+        "notas": "",
+        "tipo": "Acuático"
       },
       {
         "id": "blizzard_beach",
@@ -58,6 +63,27 @@
         "nivel_cansancio": "bajo",
         "duracion_horas": 6,
         "mejor_momento": "mañana",
+        "activo": true,
+        "notas": "",
+        "tipo": "Acuático"
+      },
+      {
+        "id": "fantasia_gardens",
+        "nombre": "Fantasia Gardens Miniature Golf",
+        "tipo": "Actividad",
+        "nivel_cansancio": "bajo",
+        "duracion_horas": 2,
+        "mejor_momento": "tarde",
+        "activo": true,
+        "notas": ""
+      },
+      {
+        "id": "fairways_minigolf",
+        "nombre": "Fairways Miniature Golf",
+        "tipo": "Actividad",
+        "nivel_cansancio": "bajo",
+        "duracion_horas": 2,
+        "mejor_momento": "tarde",
         "activo": true,
         "notas": ""
       }
@@ -90,7 +116,8 @@
         "duracion_horas": 9,
         "mejor_momento": "mañana",
         "activo": true,
-        "notas": ""
+        "notas": "",
+        "tipo": "Temático"
       },
       {
         "id": "universal_studios",
@@ -99,13 +126,25 @@
         "duracion_horas": 8,
         "mejor_momento": "mañana",
         "activo": true,
-        "notas": ""
+        "notas": "",
+        "tipo": "Temático"
       },
       {
         "id": "epic_universe",
         "nombre": "Epic Universe",
         "nivel_cansancio": "alto",
         "duracion_horas": 10,
+        "mejor_momento": "mañana",
+        "activo": true,
+        "notas": "",
+        "tipo": "Temático"
+      },
+      {
+        "id": "volcano_bay",
+        "nombre": "Volcano Bay",
+        "tipo": "Acuático",
+        "nivel_cansancio": "bajo",
+        "duracion_horas": 6,
         "mejor_momento": "mañana",
         "activo": true,
         "notas": ""

@@ -367,19 +367,31 @@ textarea{resize:vertical;min-height:65px;line-height:1.6}
 const WORKER_URL = 'https://tass-params-worker.it-integral-solution.workers.dev/parametros';
 
 const DISNEY_PARKS_DEFAULT = [
-  {id:'animal_kingdom',   nombre:'Animal Kingdom',        tipo:'Temático',   intensidad:'bajo',  activo:true},
-  {id:'epcot',            nombre:'EPCOT',                 tipo:'Temático',   intensidad:'alto',  activo:true},
-  {id:'magic_kingdom',    nombre:'Magic Kingdom',         tipo:'Temático',   intensidad:'alto',  activo:true},
-  {id:'hollywood_studios',nombre:'Hollywood Studios',     tipo:'Temático',   intensidad:'medio', activo:true},
-  {id:'typhoon_lagoon',   nombre:'Typhoon Lagoon',        tipo:'Acuático',   intensidad:'bajo',  activo:true},
-  {id:'blizzard_beach',   nombre:'Blizzard Beach',        tipo:'Acuático',   intensidad:'bajo',  activo:true},
+  {id:'animal_kingdom',    nombre:'Animal Kingdom',                  tipo:'Temático',  intensidad:'bajo',  activo:true},
+  {id:'epcot',             nombre:'EPCOT',                           tipo:'Temático',  intensidad:'alto',  activo:true},
+  {id:'magic_kingdom',     nombre:'Magic Kingdom',                   tipo:'Temático',  intensidad:'alto',  activo:true},
+  {id:'hollywood_studios', nombre:'Hollywood Studios',               tipo:'Temático',  intensidad:'medio', activo:true},
+  {id:'typhoon_lagoon',    nombre:'Typhoon Lagoon',                  tipo:'Acuático',  intensidad:'bajo',  activo:true},
+  {id:'blizzard_beach',    nombre:'Blizzard Beach',                  tipo:'Acuático',  intensidad:'bajo',  activo:true},
+  {id:'fantasia_gardens',  nombre:'Fantasia Gardens Miniature Golf', tipo:'Actividad', intensidad:'bajo',  activo:true},
+  {id:'fairways_minigolf', nombre:'Fairways Miniature Golf',         tipo:'Actividad', intensidad:'bajo',  activo:true},
 ];
 
+// Mapa maestro de tipos — garantiza que nunca aparezca "undefined" aunque el JSON guardado no tenga el campo tipo
+const PARK_TIPO_MAP = {
+  animal_kingdom:'Temático', epcot:'Temático', magic_kingdom:'Temático',
+  hollywood_studios:'Temático', typhoon_lagoon:'Acuático', blizzard_beach:'Acuático',
+  fantasia_gardens:'Actividad', fairways_minigolf:'Actividad',
+  islands_of_adventure:'Temático', universal_studios:'Temático',
+  epic_universe:'Temático', volcano_bay:'Acuático',
+};
+function getTipo(p) { return p.tipo || PARK_TIPO_MAP[p.id] || 'Temático'; }
+
 const UNIVERSAL_PARKS_DEFAULT = [
-  {id:'islands_of_adventure', nombre:'Islands of Adventure',    tipo:'Temático', intensidad:'alto',  activo:true},
-  {id:'universal_studios',    nombre:'Universal Studios Florida',tipo:'Temático', intensidad:'medio', activo:true},
-  {id:'epic_universe',        nombre:'Epic Universe',           tipo:'Temático', intensidad:'alto',  activo:true},
-  {id:'volcano_bay',          nombre:'Volcano Bay',             tipo:'Acuático', intensidad:'bajo',  activo:true},
+  {id:'islands_of_adventure', nombre:'Islands of Adventure',     tipo:'Temático', intensidad:'alto',  activo:true},
+  {id:'universal_studios',    nombre:'Universal Studios Florida', tipo:'Temático', intensidad:'medio', activo:true},
+  {id:'epic_universe',        nombre:'Epic Universe',            tipo:'Temático', intensidad:'alto',  activo:true},
+  {id:'volcano_bay',          nombre:'Volcano Bay',              tipo:'Acuático', intensidad:'bajo',  activo:true},
 ];
 
 // ─── ESTADO ──────────────────────────────────────────────────────────────────
@@ -401,7 +413,7 @@ function renderParks(dest) {
       <div class="park-drag">⠿</div>
       <div>
         <div class="park-name">${p.nombre}</div>
-        <div class="park-type">${p.tipo}</div>
+        <div class="park-type">${getTipo(p)}</div>
       </div>
       <div class="park-intensity">
         <select onchange="setIntensidad('${dest}',${i},this.value)" ${p.activo ? '' : 'disabled'}>
