@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Con Magui — Itinerario de Viaje</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Dancing+Script:wght@600;700&family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -89,6 +91,12 @@ body{font-family:'Montserrat',sans-serif;background:#F0EBE5;min-height:100vh;pad
 .day-head.descanso{background:linear-gradient(135deg,#1A4A2A,#0F3019)}
 .day-head.llegada{background:linear-gradient(135deg,#4A2A0A,#2E1A05)}
 .day-head.salida{background:linear-gradient(135deg,#3A0A0A,#200505)}
+.day-tipo-select{
+  padding:4px 8px;border-radius:6px;border:1.5px solid rgba(255,255,255,.25);
+  background:rgba(255,255,255,.12);color:white;font-family:'Montserrat',sans-serif;
+  font-size:10px;font-weight:700;cursor:pointer;outline:none;flex-shrink:0
+}
+.day-tipo-select option{background:#1A0A2E;color:white}
 .day-num{width:36px;height:36px;border-radius:9px;background:rgba(255,255,255,.15);
   display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .day-num span{font-family:'Playfair Display',serif;font-size:15px;font-weight:700;color:white}
@@ -142,12 +150,16 @@ body{font-family:'Montserrat',sans-serif;background:#F0EBE5;min-height:100vh;pad
 .disclaimer strong{font-weight:700}
 
 /* ─── FOOTER AGENTE ─────────────────────────────── */
-.itin-footer{padding:20px 44px;background:#FAFAFA;border-top:1.5px solid rgba(0,0,0,.07);
-  display:flex;align-items:center;justify-content:space-between;flex-wrap:gap}
-.footer-agente{display:flex;flex-direction:column;gap:2px}
-.footer-nombre{font-family:'Playfair Display',serif;font-size:14px;font-weight:700;color:var(--dark)}
-.footer-contacto{font-size:11px;color:var(--gray)}
-.footer-logo img{height:28px;opacity:.6}
+.itin-footer{padding:20px 44px;background:var(--dark);border-top:2px solid var(--gold);
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
+.footer-left{display:flex;align-items:center;gap:14px}
+.footer-logo-agencia{height:44px;width:auto;filter:drop-shadow(0 2px 8px rgba(200,168,75,.3))}
+.footer-agente-info{display:flex;flex-direction:column;gap:3px}
+.footer-nombre{font-family:'Playfair Display',serif;font-size:15px;font-weight:700;color:white}
+.footer-contacto{font-size:11px;color:rgba(255,255,255,.55)}
+.footer-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.footer-dev-label{font-size:8.5px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,168,75,.5)}
+.footer-logo-it{height:26px;width:auto;opacity:.7;filter:brightness(0) invert(1)}
 
 /* ─── PRINT ─────────────────────────────────────── */
 @media print{
@@ -210,7 +222,7 @@ body{font-family:'Montserrat',sans-serif;background:#F0EBE5;min-height:100vh;pad
     <div class="itin-header">
       <div class="hdr-inner">
         <div class="hdr-logo">
-          <img src="https://raw.githubusercontent.com/IT-Integral-Solutions/TASS-Starter/main/logo-con-magui.png" alt="Con Magui a Disney">
+          <img src="logo-con-magui.png" alt="Con Magui a Disney" onerror="this.style.display='none'">
         </div>
         <div class="hdr-text">
           <div class="hdr-pre">✦ Itinerario Personalizado de Viaje ✦</div>
@@ -245,12 +257,16 @@ body{font-family:'Montserrat',sans-serif;background:#F0EBE5;min-height:100vh;pad
     </div>
 
     <div class="itin-footer">
-      <div class="footer-agente">
-        <div class="footer-nombre" id="footer-agente-nombre">Con Magui a Disney</div>
-        <div class="footer-contacto" id="footer-agente-contacto"></div>
+      <div class="footer-left">
+        <img src="logo-con-magui.png" alt="Con Magui a Disney" class="footer-logo-agencia" onerror="this.style.display='none'">
+        <div class="footer-agente-info">
+          <div class="footer-nombre" id="footer-agente-nombre">Con Magui a Disney</div>
+          <div class="footer-contacto" id="footer-agente-contacto"></div>
+        </div>
       </div>
-      <div class="footer-logo">
-        <img src="https://raw.githubusercontent.com/IT-Integral-Solutions/IT-Integral-Solutions-Web/main/asset/img/logo-horizontal-transparent-it.png" alt="IT-Integral Solutions">
+      <div class="footer-right">
+        <div class="footer-dev-label">Desarrollado por</div>
+        <img src="https://raw.githubusercontent.com/IT-Integral-Solutions/IT-Integral-Solutions-Web/main/asset/img/logo-horizontal-transparent-it.png" alt="IT-Integral Solutions" class="footer-logo-it">
       </div>
     </div>
 
@@ -530,12 +546,17 @@ function renderDias(dias) {
             <div class="day-titulo">${d.titulo}</div>
             <div class="day-subtitulo">${d.subtitulo}</div>
           </div>
+          ${(d.tipo === 'descanso') ? `
+          <select class="day-tipo-select" onchange="cambiarTipoDia(${i},this.value)" onclick="event.stopPropagation()">
+            <option value="descanso" selected>🌴 Descanso</option>
+            <option value="disney">🏰 Disney</option>
+            <option value="universal">🎬 Universal</option>
+          </select>` : `
           <span class="day-badge ${d.tipo}">${
             d.tipo === 'disney' ? '🏰 Disney' :
             d.tipo === 'universal' ? '🎬 Universal' :
-            d.tipo === 'descanso' ? '🌴 Descanso' :
             d.tipo === 'llegada' ? '✈️ Llegada' : '✈️ Salida'
-          }</span>
+          }</span>`}
           <div class="day-confirmed ${d.confirmado ? 'on' : ''}" 
             onclick="event.stopPropagation();toggleConfirm(${i})" 
             title="Marcar como confirmado">✓</div>
@@ -559,6 +580,19 @@ function renderDias(dias) {
 }
 
 // ─── CONTROLES ───────────────────────────────────────────────────────────────
+function cambiarTipoDia(i, nuevoTipo) {
+  const d = diasGenerados[i];
+  d.tipo = nuevoTipo;
+  const head = document.querySelector(`#day-${i} .day-head`);
+  head.className = `day-head ${nuevoTipo}`;
+  // El selector permanece visible para seguir cambiando
+  // Actualizar también el subtítulo según tipo
+  const subEl = document.querySelector(`#day-${i} .day-subtitulo`);
+  if (nuevoTipo === 'disney' && subEl) subEl.textContent = '🏰 Día en Disney — editá los bloques abajo';
+  if (nuevoTipo === 'universal' && subEl) subEl.textContent = '🎬 Día en Universal — editá los bloques abajo';
+  if (nuevoTipo === 'descanso' && subEl) subEl.textContent = '🌴 Descanso y actividades opcionales';
+}
+
 function toggleDay(i) {
   const body   = document.querySelector(`#day-${i} .day-body`);
   const toggle = document.querySelector(`#day-${i} .day-toggle`);
@@ -590,18 +624,78 @@ function autoResize(el) {
 }
 
 // ─── EXPORT PDF ───────────────────────────────────────────────────────────────
-function exportarPDF() {
+async function exportarPDF() {
   toggleAll(true);
-  setTimeout(() => window.print(), 300);
+  const btn = document.querySelector('.tb-btn.export');
+  const origTxt = btn.textContent;
+  btn.textContent = '⏳ Generando PDF...';
+  btn.disabled = true;
+
+  await new Promise(r => setTimeout(r, 400));
+
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = document.getElementById('itin-doc');
+    const canvas = await html2canvas(doc, {
+      scale: 1.5,
+      useCORS: true,
+      logging: false,
+      backgroundColor: '#ffffff'
+    });
+    const imgData = canvas.toDataURL('image/jpeg', 0.92);
+    const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+    const pdfW = pdf.internal.pageSize.getWidth();
+    const pdfH = pdf.internal.pageSize.getHeight();
+    const imgW = canvas.width;
+    const imgH = canvas.height;
+    const ratio = pdfW / imgW;
+    const totalH = imgH * ratio;
+    let posY = 0;
+    let page = 0;
+    while (posY < totalH) {
+      if (page > 0) pdf.addPage();
+      pdf.addImage(imgData, 'JPEG', 0, -posY, pdfW, totalH);
+      posY += pdfH;
+      page++;
+    }
+    const nombre = (clienteData?.nom || 'cliente').replace(/\s+/g,'-').toLowerCase();
+    pdf.save(`itinerario-${nombre}-orlando.pdf`);
+  } catch(e) {
+    console.error(e);
+    alert('Error al generar el PDF. Intentá de nuevo.');
+  } finally {
+    btn.textContent = origTxt;
+    btn.disabled = false;
+  }
 }
 
 // ─── WHATSAPP ────────────────────────────────────────────────────────────────
 function enviarWP() {
-  const wa = params?.agente?.wa || clienteData?.wa || '';
-  const nombre = clienteData?.nom || 'cliente';
+  // Enviar al cliente (no al agente)
+  const waCliente = (clienteData?.wa || '').replace(/\D/g,'');
+  if (!waCliente) {
+    alert('El cliente no tiene número de WhatsApp registrado.');
+    return;
+  }
+  const nombre = clienteData?.nom || '';
+  const agencia = params?.agente?.agencia || params?.agente?.nombre || 'Con Magui a Disney';
   const dias = diasGenerados.length;
-  const msg = `✦ *Itinerario de viaje · Con Magui a Disney*\n\nHola ${nombre}! 🌟\n\nTe adjunto tu itinerario personalizado de ${dias} días para Orlando.\n\nCualquier ajuste que necesites, estoy a disposición. 🏰✨\n\n_Con Magui a Disney_`;
-  const url = `https://wa.me/${wa.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`;
+  const parques = diasGenerados.filter(d => d.tipo === 'disney' || d.tipo === 'universal').length;
+  const msg = [
+    `✦ *Tu itinerario de viaje a Orlando* ✦`,
+    ``,
+    `Hola ${nombre}! 🌟`,
+    ``,
+    `Ya tenés listo tu itinerario personalizado:`,
+    `📅 *${dias} días* · 🎢 *${parques} días de parque*`,
+    ``,
+    `Revisalo con calma. Cada día tiene horarios estimados y actividades planificadas especialmente para vos.`,
+    ``,
+    `Ante cualquier cambio o consulta durante el viaje, escribime y lo ajustamos en el momento. 😊`,
+    ``,
+    `_${agencia}_`
+  ].join('\n');
+  const url = `https://wa.me/${waCliente}?text=${encodeURIComponent(msg)}`;
   window.open(url, '_blank');
 }
 
