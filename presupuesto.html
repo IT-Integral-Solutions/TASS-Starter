@@ -35,6 +35,12 @@ body{background:#F0EBE5;font-family:'Montserrat',sans-serif;min-height:100vh;}
 .tb-btn:hover{background:rgba(200,168,75,.2);border-color:var(--gold-l);}
 .tb-btn.active{background:rgba(91,173,127,.22);border-color:#5BAD7F;color:#3A7A5A;}
 .tb-btn.export{background:linear-gradient(135deg,rgba(181,86,106,.85),rgba(155,123,184,.78));border-color:rgba(226,197,106,.5);color:white;}
+.tb-btn.itin{background:linear-gradient(135deg,rgba(42,122,204,.85),rgba(26,90,154,.85));border-color:rgba(100,180,255,.4);color:white;}
+.tb-btn.config{background:rgba(200,168,75,.15);border-color:rgba(200,168,75,.4);color:var(--gold-l);}
+.tb-itin-group{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:8px;
+  border:1.5px solid rgba(200,168,75,.45);background:rgba(200,168,75,.07);}
+.tb-itin-label{font-size:8.5px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;
+  color:rgba(200,168,75,.6);white-space:nowrap;margin-right:2px;}
 .tb-info{font-size:9.5px;color:rgba(255,255,255,.35);font-style:italic;margin-left:auto;}
 
 /* ─── WRAPPER ─────────────────────────────────── */
@@ -357,6 +363,12 @@ body.edit-on .price-edit-panel{display:flex;flex-wrap:wrap;align-items:center;}
   <button class="tb-btn" onclick="toggleSection('tickets-section')">🎢 Tickets</button>
   <div class="tb-sep"></div>
   <button class="tb-btn export" id="btn-export" onclick="exportarPDF()">🖨️ Exportar PDF</button>
+  <div class="tb-sep"></div>
+  <div class="tb-itin-group">
+    <span class="tb-itin-label">✦ Itinerario</span>
+    <button class="tb-btn itin" onclick="abrirItinerario()">🗓️ Generar Itinerario</button>
+    <button class="tb-btn config" onclick="window.open('parametros.html','_blank')">⚙️ Configuración</button>
+  </div>
   <span class="tb-info">Imprimir → Guardar como PDF · Sin márgenes</span>
 </div>
 
@@ -1582,6 +1594,18 @@ function toggleSection(id){
 document.querySelectorAll('[data-editable]').forEach(el=>{
   el.addEventListener('keydown',e=>{if(e.key==='Enter')e.preventDefault();});
 });
+
+// ══ ITINERARIO ═══════════════════════════════════════════════════════════
+function abrirItinerario() {
+  // Reutiliza el mismo encoded data que ya está en la URL
+  const params = new URLSearchParams(window.location.search);
+  const data = params.get('data');
+  if (!data) {
+    alert('No hay datos de cliente. Abrí el presupuesto desde el formulario de consulta.');
+    return;
+  }
+  window.open('itinerario.html?data=' + data, '_blank');
+}
 
 // ══ EXTRAS TOGGLE (toolbar) ════════════════════════════════════════════
 function toggleExtra(id){
