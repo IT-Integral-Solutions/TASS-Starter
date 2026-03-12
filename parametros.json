@@ -76,16 +76,6 @@
         "mejor_momento": "tarde",
         "activo": true,
         "notas": ""
-      },
-      {
-        "id": "fairways_minigolf",
-        "nombre": "Fairways Miniature Golf",
-        "tipo": "Actividad",
-        "nivel_cansancio": "bajo",
-        "duracion_horas": 2,
-        "mejor_momento": "tarde",
-        "activo": true,
-        "notas": ""
       }
     ],
     "reglas": {
