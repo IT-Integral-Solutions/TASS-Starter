@@ -357,6 +357,7 @@ body.edit-on .price-edit-panel{display:flex;flex-wrap:wrap;align-items:center;}
   <button class="tb-btn" onclick="toggleSection('tickets-section')">🎢 Tickets</button>
   <div class="tb-sep"></div>
   <button class="tb-btn export" id="btn-export" onclick="exportarPDF()">🖨️ Exportar PDF</button>
+  <button class="tb-btn" id="btn-itinerario" onclick="abrirItinerario()" style="background:linear-gradient(135deg,rgba(91,173,127,.85),rgba(58,122,90,.78));border-color:rgba(91,173,127,.5);color:white;">🗓️ Generar Itinerario</button>
   <span class="tb-info">Imprimir → Guardar como PDF · Sin márgenes</span>
 </div>
 
@@ -2789,45 +2790,379 @@ function buildPDFSummary(){
   s.innerHTML = html;
 }
 
-function exportarPDF(){
+// ══ SERIALIZAR PRESUPUESTO → ITINERARIO ═══════════════════════════════
+// Empaqueta todo lo confirmado en el presupuesto para pasarlo al itinerario
+
+function serializarPresupuesto(){
+  // ── Datos base del cliente ──────────────────────────────────────────
+  var clienteEl = document.getElementById('hdr-cliente');
+  var fechaEl   = document.getElementById('hdr-fecha');
+  var viajeEl   = document.getElementById('hdr-viaje');
+
+  // ── Leer datos del URL param original ──────────────────────────────
+  var urlParams = new URLSearchParams(window.location.search);
+  var rawData = urlParams.get('data') || '';
+  var d = {};
+  try { d = JSON.parse(atob(rawData)); } catch(e){}
+
+  // ── Hoteles seleccionados (visible = seleccionado/recomendado) ──────
+  var hotelDisney = null;
+  ['d1','d2','d3'].forEach(function(k){
+    if(hotelDisney) return;
+    var row = document.querySelector('[data-row="'+k+'"]');
+    if(!row || row.style.display==='none') return;
+    var hName  = row.querySelector('.opt-hotel');
+    var hDet   = row.querySelector('.opt-details');
+    var hPrice = row.querySelector('.opt-price');
+    if(hName){
+      hotelDisney = {
+        nombre: hName.textContent.trim(),
+        detalle: hDet ? hDet.textContent.trim() : '',
+        precio: hPrice ? hPrice.textContent.trim() : ''
+      };
+    }
+  });
+
+  var hotelUniversal = null;
+  ['u1','u2','u3'].forEach(function(k){
+    if(hotelUniversal) return;
+    var row = document.querySelector('[data-row="'+k+'"]');
+    if(!row || row.style.display==='none') return;
+    var hName  = row.querySelector('.opt-hotel');
+    var hDet   = row.querySelector('.opt-details');
+    var hPrice = row.querySelector('.opt-price');
+    if(hName){
+      hotelUniversal = {
+        nombre: hName.textContent.trim(),
+        detalle: hDet ? hDet.textContent.trim() : '',
+        precio: hPrice ? hPrice.textContent.trim() : ''
+      };
+    }
+  });
+
+  // ── Fechas por segmento ─────────────────────────────────────────────
+  // Disney: fIn → fOutDis, Universal: fOutDis → fOutUni, Crucero: fOutUni → fFin
+  var fIn     = d.fIn  || '';
+  var fOut    = d.fOut || '';
+  var hasDis  = d.dest && (d.dest.includes('Disney') || d.dest.includes('Ambos'));
+  var hasUni  = d.dest && (d.dest.includes('Universal') || d.dest.includes('Ambos'));
+
+  // Leer fechas editables de las cajas Disney/Universal en el presupuesto
+  var disFechaIn  = fIn;
+  var disFechaOut = '';
+  var uniFechaIn  = '';
+  var uniFechaOut = '';
+
+  // Intentar leer desde .park-dates del presupuesto si existen
+  var disBox = document.getElementById('disney-parks');
+  var uniBox = document.getElementById('universal-parks');
+  if(disBox){
+    var pdVals = disBox.querySelectorAll('.pd-val');
+    if(pdVals[0]) disFechaIn  = pdVals[0].textContent.trim() || disFechaIn;
+    if(pdVals[1]) disFechaOut = pdVals[1].textContent.trim();
+  }
+  if(uniBox){
+    var pdValsU = uniBox.querySelectorAll('.pd-val');
+    if(pdValsU[0]) uniFechaIn  = pdValsU[0].textContent.trim();
+    if(pdValsU[1]) uniFechaOut = pdValsU[1].textContent.trim();
+  }
+
+  // Calcular noches Disney y Universal desde diasDis/diasUni del formulario
+  var nDisney    = parseInt(d.diasDis) || 0;
+  var nUniversal = parseInt(d.diasUni) || 0;
+
+  // Fechas calculadas si no se leyeron del DOM
+  if(fIn && nDisney > 0 && !disFechaOut){
+    var dOut = new Date(fIn);
+    dOut.setDate(dOut.getDate() + nDisney);
+    disFechaOut = dOut.toISOString().slice(0,10);
+  }
+  if(disFechaOut && nUniversal > 0 && !uniFechaIn){
+    uniFechaIn = disFechaOut;
+    if(!uniFechaOut){
+      var uOut = new Date(disFechaOut);
+      uOut.setDate(uOut.getDate() + nUniversal);
+      uniFechaOut = uOut.toISOString().slice(0,10);
+    }
+  }
+
+  // ── Crucero ─────────────────────────────────────────────────────────
+  var crucSection = document.getElementById('sec-crucero');
+  var tieneCrucero = crucSection && crucSection.style.display !== 'none';
+  var crucNoches = 3; // default
+  var crucItinLabel = '';
+  if(tieneCrucero){
+    var crucBtn = document.querySelector('.crucero-itin-btn.active');
+    if(crucBtn){
+      var txt = crucBtn.textContent;
+      var m = txt.match(/(\d+)\s*noches?/i);
+      if(m) crucNoches = parseInt(m[1]);
+      crucItinLabel = txt.trim();
+    }
+  }
+
+  var crucFechaIn  = (uniFechaOut || disFechaOut) || '';
+  var crucFechaOut = '';
+  if(crucFechaIn && tieneCrucero){
+    var cOut = new Date(crucFechaIn);
+    cOut.setDate(cOut.getDate() + crucNoches);
+    crucFechaOut = cOut.toISOString().slice(0,10);
+  }
+
+  // ── Tickets Disney ──────────────────────────────────────────────────
+  var ticketsDisney    = [];
+  var ticketsUniversal = [];
+  document.querySelectorAll('.ticket-type').forEach(function(tt){
+    var lbl = tt.querySelector('.tt-name, .tt-label, b, strong');
+    if(!lbl) return;
+    var precio = tt.querySelector('.tt-price, .opt-price');
+    var nombre = lbl.textContent.trim();
+    var priceVal = precio ? precio.textContent.trim() : '';
+    // Diferenciar Disney vs Universal por el bloque padre
+    var blk = tt.closest('.ticket-block');
+    if(!blk) return;
+    var head = blk.querySelector('.tb-head .tbh-title');
+    if(head && head.textContent.includes('Universal')){
+      ticketsUniversal.push({ nombre: nombre, precio: priceVal });
+    } else {
+      ticketsDisney.push({ nombre: nombre, precio: priceVal });
+    }
+  });
+
+  // ── Promociones activas ─────────────────────────────────────────────
+  var promos = [];
+  var secPromo = document.getElementById('sec-promo');
+  if(secPromo && secPromo.style.display !== 'none'){
+    var promoMap = {
+      'promo-dia-gratis': '🌅 Día gratis en check-in',
+      'promo-comidas': '🍽️ Descuento en plan de comidas',
+      'promo-hotel': '🏨 Descuento en alojamiento',
+      'promo-tickets': '🎟️ Descuento en tickets'
+    };
+    Object.keys(promoMap).forEach(function(id){
+      var el = document.getElementById(id);
+      if(el && el.style.display !== 'none') promos.push(promoMap[id]);
+    });
+    // Leer texto editable de la sección promo
+    var promoEdit = secPromo.querySelector('[data-editable], .promo-text, p');
+    if(promoEdit && promoEdit.textContent.trim()){
+      promos.push('📝 ' + promoEdit.textContent.trim());
+    }
+  }
+
+  // ── Parques Disney incluidos ─────────────────────────────────────────
+  var parquesDisney = [];
+  document.querySelectorAll('#disney-parks .park-card:not(.removed)').forEach(function(card){
+    var name = card.querySelector('.pc-name');
+    if(name) parquesDisney.push(name.textContent.trim());
+  });
+
+  // ── Parques Universal incluidos ──────────────────────────────────────
+  var parquesUniversal = [];
+  document.querySelectorAll('#universal-parks .park-card:not(.removed)').forEach(function(card){
+    var name = card.querySelector('.pc-name');
+    if(name) parquesUniversal.push(name.textContent.trim());
+  });
+
+  // ── Construir objeto final ──────────────────────────────────────────
+  var budget = {
+    // Cliente
+    nombre:   d.nom || (clienteEl ? clienteEl.textContent.trim() : ''),
+    nAdultos: parseInt(d.nAdu) || 2,
+    nMenores: parseInt(d.nMen) || 0,
+    edades:   d.edades || [],
+    // Destinos
+    destino:  d.dest || '',
+    hasDis:   !!hasDis,
+    hasUni:   !!hasUni,
+    // Fechas generales
+    fIn:  fIn,
+    fOut: fOut,
+    // Segmento Disney
+    disney: hasDis ? {
+      hotelNombre: hotelDisney ? hotelDisney.nombre : '',
+      hotelDetalle: hotelDisney ? hotelDisney.detalle : '',
+      fIn:    disFechaIn,
+      fOut:   disFechaOut,
+      noches: nDisney,
+      parques: parquesDisney
+    } : null,
+    // Segmento Universal
+    universal: hasUni ? {
+      hotelNombre: hotelUniversal ? hotelUniversal.nombre : '',
+      hotelDetalle: hotelUniversal ? hotelUniversal.detalle : '',
+      fIn:    uniFechaIn,
+      fOut:   uniFechaOut,
+      noches: nUniversal,
+      parques: parquesUniversal
+    } : null,
+    // Segmento Crucero
+    crucero: tieneCrucero ? {
+      fIn:    crucFechaIn,
+      fOut:   crucFechaOut,
+      noches: crucNoches,
+      itinLabel: crucItinLabel
+    } : null,
+    // Tickets
+    ticketsDisney:    ticketsDisney,
+    ticketsUniversal: ticketsUniversal,
+    // Extras & promos
+    promos: promos,
+    extras: d.extras || [],
+    catHotel: d.catHotel || '',
+    transporte: d.transporte || '',
+    mes: d.mes || ''
+  };
+
+  return budget;
+}
+
+function abrirItinerario(){
+  var budget = serializarPresupuesto();
+  var encoded = btoa(unescape(encodeURIComponent(JSON.stringify(budget))));
+  var base = window.location.href.replace(/\/[^\/]*$/, '/').replace(/presupuesto\.html.*$/, '');
+  var url = base + 'itinerario.html?budget=' + encoded;
+  window.open(url, '_blank');
+}
   var btn = document.getElementById('btn-export');
   if(btn){ btn.textContent = '⏳ Preparando...'; btn.disabled = true; }
-  buildPDFSummary();
+
+  // Cargar jsPDF + html2canvas si no están cargados
+  function loadScript(src, cb){
+    if(document.querySelector('script[src="'+src+'"]')){ cb(); return; }
+    var s = document.createElement('script');
+    s.src = src; s.onload = cb; document.head.appendChild(s);
+  }
+
+  loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', function(){
+    loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', function(){
+      buildPDFSummary();
+      setTimeout(function(){
+        _generarPDFConJsPDF(btn);
+      }, 600);
+    });
+  });
+}
+
+function _generarPDFConJsPDF(btn){
+  var el = document.getElementById('pdf-summary');
+  if(!el){ if(btn){btn.textContent='🖨️ Exportar PDF';btn.disabled=false;} return; }
+
+  // Mostrar temporalmente para captura
+  var prevDisplay = el.style.display;
+  el.style.display = 'block';
+  el.style.position = 'fixed';
+  el.style.top = '-9999px';
+  el.style.left = '0';
+  el.style.width = '900px';
+  el.style.zIndex = '-1';
+
+  // Esperar fuentes y layout
   setTimeout(function(){
-    if(btn){ btn.textContent = '🖨️ Exportar PDF'; btn.disabled = false; }
-    window.print();
-  }, 400);
+    html2canvas(el, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#ffffff',
+      width: 900,
+      windowWidth: 900,
+      logging: false
+    }).then(function(canvas){
+      // Restaurar estado original
+      el.style.display = prevDisplay;
+      el.style.position = '';
+      el.style.top = '';
+      el.style.left = '';
+      el.style.width = '';
+      el.style.zIndex = '';
+
+      var { jsPDF } = window.jspdf;
+      var pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+
+      var pageW = pdf.internal.pageSize.getWidth();   // 210mm
+      var pageH = pdf.internal.pageSize.getHeight();  // 297mm
+      var margin = 10; // mm
+      var printW = pageW - margin * 2;
+
+      var imgW = canvas.width;
+      var imgH = canvas.height;
+      var ratio = printW / (imgW * 0.264583); // px → mm (96dpi → mm)
+      var totalH = imgH * 0.264583 * ratio;   // alto total en mm
+
+      var pageContentH = pageH - margin * 2;
+      var numPages = Math.ceil(totalH / pageContentH);
+
+      for(var i = 0; i < numPages; i++){
+        if(i > 0) pdf.addPage();
+
+        var srcY = i * pageContentH / ratio / 0.264583; // en px
+        var srcH = pageContentH / ratio / 0.264583;
+
+        // Crear canvas de la franja de esta página
+        var pageCanvas = document.createElement('canvas');
+        pageCanvas.width = imgW;
+        pageCanvas.height = Math.min(srcH, imgH - srcY);
+        var ctx = pageCanvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+        ctx.drawImage(canvas, 0, srcY, imgW, pageCanvas.height, 0, 0, imgW, pageCanvas.height);
+
+        var imgData = pageCanvas.toDataURL('image/jpeg', 0.95);
+        var sliceH = pageCanvas.height * 0.264583 * ratio;
+        pdf.addImage(imgData, 'JPEG', margin, margin, printW, sliceH);
+      }
+
+      // Nombre del archivo
+      var clienteEl = document.getElementById('hdr-cliente');
+      var apellido = clienteEl ? clienteEl.textContent.trim().replace(/^Familia\s*/i,'').replace(/\s+/g,'_') : 'Cliente';
+      var filename = 'Presupuesto_ConMagui_' + apellido + '.pdf';
+      pdf.save(filename);
+
+      if(btn){ btn.textContent = '🖨️ Exportar PDF'; btn.disabled = false; }
+    }).catch(function(err){
+      console.error('Error generando PDF:', err);
+      el.style.display = prevDisplay;
+      el.style.position = '';
+      el.style.top = '';
+      el.style.left = '';
+      el.style.width = '';
+      el.style.zIndex = '';
+      if(btn){ btn.textContent = '🖨️ Exportar PDF'; btn.disabled = false; }
+      alert('Error al generar el PDF. Intentá de nuevo.');
+    });
+  }, 300);
 }
 </script>
 <footer style="background:#0B1628;padding:28px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-top:40px;print-color-adjust:exact;-webkit-print-color-adjust:exact;">
-  <!-- Agencia -->
-  <a href="https://www.conmaguiadisney.com" target="_blank" rel="noopener"
-     style="display:flex;align-items:center;gap:12px;text-decoration:none;">
-    <img src="https://raw.githubusercontent.com/IT-Integral-Solutions/TASS-Starter/main/asset/img/conmagui.png"
-         alt="Con Magui a Disney"
-         style="height:52px;width:auto;filter:drop-shadow(0 2px 8px rgba(200,168,75,.35));">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <svg width="36" height="26" viewBox="0 0 52 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="8" cy="19" r="5" fill="none" stroke="#C9952A" stroke-width="1.5"/>
+      <circle cx="8" cy="19" r="2.5" fill="#C9952A"/>
+      <circle cx="44" cy="7" r="5" fill="none" stroke="#C9952A" stroke-width="1.5"/>
+      <circle cx="44" cy="7" r="2.5" fill="#C9952A"/>
+      <circle cx="44" cy="31" r="5" fill="none" stroke="rgba(201,149,42,0.45)" stroke-width="1.5"/>
+      <circle cx="44" cy="31" r="2.5" fill="rgba(201,149,42,0.35)"/>
+      <line x1="13" y1="16" x2="39" y2="9" stroke="url(#fg1p)" stroke-width="1.2" stroke-dasharray="2 2"/>
+      <line x1="13" y1="22" x2="39" y2="29" stroke="url(#fg2p)" stroke-width="1.2" stroke-dasharray="2 2"/>
+      <line x1="44" y1="12" x2="44" y2="26" stroke="rgba(201,149,42,0.2)" stroke-width="1" stroke-dasharray="2 2"/>
+      <defs>
+        <linearGradient id="fg1p" x1="13" y1="16" x2="39" y2="9" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#C9952A"/><stop offset="100%" stop-color="rgba(201,149,42,0.55)"/>
+        </linearGradient>
+        <linearGradient id="fg2p" x1="13" y1="22" x2="39" y2="29" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#C9952A"/><stop offset="100%" stop-color="rgba(201,149,42,0.35)"/>
+        </linearGradient>
+      </defs>
+    </svg>
     <div>
-      <div style="font-family:Georgia,serif;font-size:13px;font-weight:700;color:white;letter-spacing:.02em;">Con Magui a Disney</div>
-      <div style="font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-top:2px;">www.conmaguiadisney.com</div>
+      <div style="font-family:Rajdhani,sans-serif;font-weight:700;font-size:14px;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.6);"><span style="color:#C9952A;">IT</span>-Integral Solutions</div>
+      <div style="font-family:DM Sans,sans-serif;font-weight:300;font-size:9px;letter-spacing:.35em;text-transform:uppercase;color:rgba(255,255,255,.2);">Desarrollado por IT Integral Solutions</div>
     </div>
-  </a>
-  <!-- Centro: mail agencia -->
-  <a href="mailto:info@conmaguiadisney.com"
-     style="font-size:11px;color:rgba(255,255,255,.35);text-decoration:none;text-align:center;transition:color .15s;"
-     onmouseover="this.style.color='rgba(200,168,75,.8)'" onmouseout="this.style.color='rgba(255,255,255,.35)'">
-    ✉️ info@conmaguiadisney.com
-  </a>
-  <!-- IT Integral -->
-  <a href="https://www.itintegraltech.com" target="_blank" rel="noopener"
-     style="display:flex;align-items:center;gap:10px;text-decoration:none;">
-    <div style="text-align:right;">
-      <div style="font-size:8px;letter-spacing:.25em;text-transform:uppercase;color:rgba(255,255,255,.25);margin-bottom:3px;">Desarrollado por</div>
-      <img src="https://raw.githubusercontent.com/IT-Integral-Solutions/IT-Integral-Solutions-Web/main/asset/img/logo-horizontal-transparent-it.png"
-           alt="IT-Integral Solutions"
-           style="height:22px;width:auto;opacity:.55;filter:brightness(0) invert(1);">
-      <div style="font-size:8px;color:rgba(255,255,255,.18);letter-spacing:.15em;margin-top:2px;">www.itintegraltech.com</div>
-    </div>
-  </a>
+  </div>
+  <div style="font-family:DM Sans,sans-serif;font-size:11px;color:rgba(255,255,255,.2);text-align:right;">
+    Sistema TASS · Con Magui a Disney<br>
+    <span style="color:rgba(255,255,255,.12);">© 2025 IT Integral Solutions</span>
+  </div>
 </footer>
 </body>
 </html>

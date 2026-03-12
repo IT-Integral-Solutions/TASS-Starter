@@ -91,6 +91,7 @@ body{font-family:'Montserrat',sans-serif;background:#F0EBE5;min-height:100vh;pad
 .day-head.descanso{background:linear-gradient(135deg,#1A4A2A,#0F3019)}
 .day-head.llegada{background:linear-gradient(135deg,#4A2A0A,#2E1A05)}
 .day-head.salida{background:linear-gradient(135deg,#3A0A0A,#200505)}
+.day-head.crucero{background:linear-gradient(135deg,#0A2A4A,#05193A)}
 .day-tipo-select{
   padding:4px 8px;border-radius:6px;border:1.5px solid rgba(255,255,255,.25);
   background:rgba(255,255,255,.12);color:white;font-family:'Montserrat',sans-serif;
@@ -110,6 +111,7 @@ body{font-family:'Montserrat',sans-serif;background:#F0EBE5;min-height:100vh;pad
 .day-badge.descanso{background:rgba(91,173,127,.25);color:#A0DDB8;border:1px solid rgba(91,173,127,.3)}
 .day-badge.llegada{background:rgba(200,168,75,.25);color:#E8C96A;border:1px solid rgba(200,168,75,.3)}
 .day-badge.salida{background:rgba(212,116,143,.25);color:#F0A0B8;border:1px solid rgba(212,116,143,.3)}
+.day-badge.crucero{background:rgba(42,130,220,.25);color:#90C8FF;border:1px solid rgba(42,130,220,.3)}
 .day-toggle{color:rgba(255,255,255,.4);font-size:12px;transition:transform .2s;flex-shrink:0}
 .day-toggle.open{transform:rotate(180deg)}
 .day-confirmed{width:22px;height:22px;border-radius:50%;background:rgba(91,173,127,.3);
@@ -303,12 +305,28 @@ let params = {};
 let diasGenerados = [];
 
 // ─── PARSEAR URL ─────────────────────────────────────────────────────────────
+// Soporta ?budget= (nuevo, desde presupuesto confirmado) y ?data= (legacy, del formulario)
 function parsearURL() {
   const urlParams = new URLSearchParams(window.location.search);
-  const encoded = urlParams.get('data');
-  if (!encoded) return null;
-  try { return JSON.parse(atob(encoded)); }
-  catch(e) { return null; }
+  // Intentar primero ?budget= (presupuesto confirmado — fuente de verdad)
+  const budgetEncoded = urlParams.get('budget');
+  if (budgetEncoded) {
+    try {
+      const b = JSON.parse(decodeURIComponent(escape(atob(budgetEncoded))));
+      b._fuente = 'budget';
+      return b;
+    } catch(e) {}
+  }
+  // Fallback a ?data= (formulario cliente — modo legacy)
+  const dataEncoded = urlParams.get('data');
+  if (dataEncoded) {
+    try {
+      const d = JSON.parse(atob(dataEncoded));
+      d._fuente = 'datos';
+      return d;
+    } catch(e) {}
+  }
+  return null;
 }
 
 // ─── CARGAR PARÁMETROS ───────────────────────────────────────────────────────
@@ -349,174 +367,421 @@ async function cargarParams() {
   };
 }
 
-// ─── ALGORITMO ───────────────────────────────────────────────────────────────
-function generarDias(cliente, p) {
-  const dias = [];
-  const fIn  = new Date(cliente.fIn + 'T12:00:00');
-  const fOut = new Date(cliente.fOut + 'T12:00:00');
-  const totalDias = Math.round((fOut - fIn) / 86400000) + 1;
-
-  const dest = cliente.dest || '';
-  const esDisney    = dest.includes('Disney') || dest.includes('Ambos');
-  const esUniversal = dest.includes('Universal') || dest.includes('Ambos');
-  const esAmbos     = dest.includes('Ambos');
-
-  // Parsear días numéricos
-  const diasDis = parseInt((cliente.diasDis || '0').replace(/\D/g,'')) || 0;
-  const diasUni = parseInt((cliente.diasUni || '0').replace(/\D/g,'')) || 0;
-
-  // Obtener parques ordenados y activos
-  function getParquesOrdenados(dest) {
-    const cfg = p[dest];
-    if (!cfg) return [];
-    const orden = cfg.reglas?.orden_parques || [];
-    const activos = cfg.parques.filter(pk => pk.activo);
-    const ordenados = [];
-    orden.forEach(id => { const pk = activos.find(a => a.id === id); if(pk) ordenados.push(pk); });
-    activos.forEach(pk => { if(!ordenados.find(o => o.id === pk.id)) ordenados.push(pk); });
-    return ordenados;
-  }
-
-  const parquesDisney    = getParquesOrdenados('disney');
-  const parquesUniversal = getParquesOrdenados('universal');
-
-  // Generar secuencia de actividades por destino
-  function generarSecuencia(parques, totalParques, reglas) {
-    const seq = [];
-    let parkIdx = 0;
-    let diasParque = 0;
-    const descCada = reglas?.descanso_cada_dias_parque || 2;
-    const acts = reglas?.actividades_descanso || ['Descanso'];
-
-    while(seq.length < totalParques) {
-      if(diasParque < descCada && parkIdx < parques.length) {
-        seq.push({tipo:'parque', parque: parques[parkIdx % parques.length]});
-        parkIdx++;
-        diasParque++;
-      } else {
-        if(seq.length < totalParques) {
-          seq.push({tipo:'descanso', actividades: acts});
-          diasParque = 0;
-        }
-      }
-    }
-    return seq;
-  }
-
-  const seqDisney    = esDisney    ? generarSecuencia(parquesDisney,    diasDis, p.disney?.reglas)    : [];
-  const seqUniversal = esUniversal ? generarSecuencia(parquesUniversal, diasUni, p.universal?.reglas) : [];
-
-  // Construir días
-  let seqDIdx = 0, seqUIdx = 0;
-  let fase = esAmbos ? 'disney' : (esDisney ? 'disney' : 'universal');
-
-  for(let i = 0; i < totalDias; i++) {
-    const fecha = new Date(fIn);
-    fecha.setDate(fIn.getDate() + i);
-    const esPrimero = i === 0;
-    const esUltimo  = i === totalDias - 1;
-
-    let dia = { idx: i+1, fecha, tipo:'', titulo:'', subtitulo:'', bloques:[], notas:'', confirmado:false };
-
-    if(esPrimero) {
-      // DÍA DE LLEGADA
-      dia.tipo = 'llegada';
-      dia.titulo = '✈️ Llegada a Orlando';
-      const actLlegada = esDisney
-        ? (p.disney?.reglas?.dia_llegada || 'disney_springs')
-        : (p.universal?.reglas?.dia_llegada || 'citywalk');
-      dia.subtitulo = actLlegada === 'disney_springs' ? 'Disney Springs' :
-                      actLlegada === 'citywalk' ? 'CityWalk Universal' :
-                      actLlegada === 'descanso' ? 'Descanso en hotel' : 'Actividad libre';
-      dia.bloques = [
-        {icono:'✈️', hora:'Variable', periodo:'Según vuelo', label:'Vuelo y traslado', texto:'Vuelo hacia Orlando. Llegada al aeropuerto y traslado al hotel.'},
-        {icono:'🏨', hora:'15:00', periodo:'Tarde', label:'Check-in hotel', texto:`Check-in en ${esDisney ? formatHotel(cliente.hotelDis) : formatHotel(cliente.hotelUni)}. Dejar equipaje y refrescarse.`},
-        {icono:'🌅', hora:'17:00', periodo:'Tarde', label:'Primera actividad', texto: actLlegada === 'disney_springs' ? 'Paseo por Disney Springs: compras, gastronomía y entretenimiento sin necesidad de ticket.' :
-          actLlegada === 'citywalk' ? 'Paseo por CityWalk Universal: restaurants, tiendas y ambiente de bienvenida.' :
-          'Descanso en el hotel para recuperar energías. Piscina o spa disponibles.'},
-        {icono:'🍽️', hora:'19:30', periodo:'Noche', label:'Cena', texto:'Cena en el hotel o en los restaurantes del área de llegada.'},
-        {icono:'🌙', hora:'21:30', periodo:'Noche', label:'Descanso', texto:'Descanso. Mañana comienza la aventura.'},
-      ];
-
-    } else if(esUltimo) {
-      // DÍA DE SALIDA
-      dia.tipo = 'salida';
-      dia.titulo = '✈️ Regreso a casa';
-      dia.subtitulo = 'Check-out y vuelo de regreso';
-      dia.bloques = [
-        {icono:'⏰', hora:'07:00', periodo:'Mañana', label:'Último desayuno', texto:'Último desayuno en el hotel. Momento para recordar los mejores momentos del viaje.'},
-        {icono:'🧳', hora:'10:00', periodo:'Mañana', label:'Check-out', texto:'Check-out del hotel. Entrega de habitaciones y preparación del equipaje.'},
-        {icono:'🚌', hora:'Variable', periodo:'Según vuelo', label:'Traslado al aeropuerto', texto:'Traslado al aeropuerto de Orlando (MCO). Tiempo estimado: 30-60 minutos según hotel.'},
-        {icono:'✈️', hora:'Variable', periodo:'Según vuelo', label:'Vuelo de regreso', texto:'Embarque y vuelo de regreso. ¡Hasta la próxima Orlando!'},
-      ];
-
-    } else {
-      // DÍAS INTERMEDIOS
-      let item = null;
-      if(fase === 'disney' && seqDIdx < seqDisney.length) {
-        item = seqDisney[seqDIdx++];
-        if(seqDIdx >= seqDisney.length && esAmbos) fase = 'universal';
-      } else if(fase === 'universal' && seqUIdx < seqUniversal.length) {
-        item = seqUniversal[seqUIdx++];
-      }
-
-      if(!item) {
-        // día extra libre
-        dia.tipo = 'descanso';
-        dia.titulo = '🌴 Día libre';
-        dia.subtitulo = 'Descanso y actividades opcionales';
-        dia.bloques = bloquesDescanso(['Actividad libre a elección']);
-      } else if(item.tipo === 'parque') {
-        const pk = item.parque;
-        const esDis = esDisney && parquesDisney.find(p => p.id === pk.id);
-        dia.tipo = esDis ? 'disney' : 'universal';
-        dia.titulo = `🎢 ${pk.nombre}`;
-        dia.subtitulo = `${pk.intensidad === 'alto' ? '🔴 Día intenso' : pk.intensidad === 'medio' ? '🟡 Día moderado' : '🟢 Día tranquilo'} · ${esDis ? 'Disney' : 'Universal'}`;
-        dia.bloques = bloquesParque(pk, cliente, esDis ? p.disney : p.universal);
-      } else {
-        // descanso
-        dia.tipo = 'descanso';
-        const acts = item.actividades || ['Descanso'];
-        const act1 = acts[Math.floor(Math.random() * Math.min(acts.length, 3))];
-        dia.titulo = `🌴 Día de descanso`;
-        dia.subtitulo = act1;
-        dia.bloques = bloquesDescanso(acts);
-      }
-    }
-
-    dias.push(dia);
-  }
-  return dias;
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function addDays(base, n) {
+  const d = new Date(base);
+  d.setDate(d.getDate() + n);
+  return d;
 }
+function isoDate(d) { return d.toISOString().slice(0,10); }
+function parseDate(str) { return new Date(str + 'T12:00:00'); }
 
-function formatHotel(h) {
-  if (!h) return 'hotel';
-  if (h.includes('on-site') || h.includes('dentro')) return 'hotel dentro del complejo';
-  if (h.includes('off-site') || h.includes('fuera')) return 'hotel cercano';
+// Extrae nombre limpio de hotel desde datos del presupuesto
+function nombreHotel(segmento) {
+  if (!segmento) return 'hotel';
+  if (segmento.hotelNombre) return segmento.hotelNombre;
+  if (segmento.hotelDetalle) return segmento.hotelDetalle;
   return 'hotel';
 }
 
-function bloquesParque(pk, cliente, cfg) {
-  const esIntense = pk.intensidad === 'alto';
-  const esMedio   = pk.intensidad === 'medio';
-  const notas = cfg?.reglas?.notas_generales || '';
-  return [
-    {icono:'🌅', hora:'07:30', periodo:'Mañana', label:'Desayuno y preparación', texto:'Desayuno temprano en el hotel. Preparar mochila con protector solar, agua y snacks.'},
-    {icono:'🎢', hora:'09:00', periodo:'Mañana', label:`Apertura · ${pk.nombre}`, texto:`Llegar a la apertura del parque para aprovechar las atracciones con menor espera. ${esIntense ? 'Priorizar las atracciones más populares primero.' : 'Recorrer el parque a ritmo tranquilo.'}`},
-    {icono:'☀️', hora:'13:00', periodo:'Tarde', label:'Almuerzo en el parque', texto:`${cliente.extras?.includes('Plan de comidas Disney') ? 'Utilizar el plan de comidas Disney incluido.' : 'Almuerzo en restaurante del parque o food court.'}`},
-    {icono:'🎡', hora:'14:30', periodo:'Tarde', label:'Tarde en el parque', texto:`${esIntense ? 'Continuar con atracciones y espectáculos de la tarde. Descanso de 30 min si es necesario.' : esMedio ? 'Recorrido tranquilo por las zonas restantes del parque.' : 'Tarde relajada explorando el parque sin apuro.'}`},
-    {icono:'🌙', hora:'19:00', periodo:'Noche', label:'Cierre del día', texto:`${pk.id === 'magic_kingdom' ? '🎆 Quedarse para el espectáculo de fuegos artificiales "Happily Ever After" (aprox. 21:00). Vale la pena.' : pk.id === 'epcot' ? '🌟 Disfrutar el espectáculo nocturno de EPCOT antes de salir.' : 'Cena en el parque o regreso al hotel para cenar.'}${notas ? '\n\n💡 ' + notas : ''}`},
-  ];
+// Genera secuencia parque/descanso sin días de descanso cuando noDescanso=true
+function generarSecuencia(parques, totalSlots, reglas, noDescanso) {
+  const seq = [];
+  let parkIdx = 0;
+  let diasParque = 0;
+  const descCada = noDescanso ? 9999 : (reglas?.descanso_cada_dias_parque || 2);
+  const acts = reglas?.actividades_descanso || ['Descanso'];
+  while (seq.length < totalSlots) {
+    if (diasParque < descCada && parkIdx < parques.length) {
+      seq.push({ tipo: 'parque', parque: parques[parkIdx % parques.length] });
+      parkIdx++;
+      diasParque++;
+    } else {
+      seq.push({ tipo: 'descanso', actividades: acts });
+      diasParque = 0;
+    }
+  }
+  return seq;
 }
 
-function bloquesDescanso(acts) {
-  const act = acts.slice(0,3);
-  return [
-    {icono:'😴', hora:'09:00', periodo:'Mañana', label:'Mañana libre', texto:'Mañana de descanso. Dormir hasta tarde, desayunar sin apuro. Los pies lo agradecerán.'},
-    {icono:'🛍️', hora:'11:00', periodo:'Mañana / Tarde', label:'Actividad del día', texto:act.join(' · ') + '. A elección del grupo según energía y preferencias.'},
-    {icono:'🏊', hora:'15:00', periodo:'Tarde', label:'Tarde en el hotel', texto:'Tarde en las instalaciones del hotel. Piscina, spa o simplemente relajarse.'},
-    {icono:'🍽️', hora:'19:30', periodo:'Noche', label:'Cena tranquila', texto:'Cena sin apuro. Mañana vuelve la acción.'},
-  ];
+function getParquesOrdenados(cfgDest, parquesBudget) {
+  if (!cfgDest) return [];
+  const orden = cfgDest.reglas?.orden_parques || [];
+  const activos = cfgDest.parques.filter(pk => pk.activo);
+  const ordenados = [];
+  orden.forEach(id => { const pk = activos.find(a => a.id === id); if(pk) ordenados.push(pk); });
+  activos.forEach(pk => { if(!ordenados.find(o => o.id === pk.id)) ordenados.push(pk); });
+  // Si el budget especifica parques concretos, filtrar solo esos
+  if (parquesBudget && parquesBudget.length > 0) {
+    const filtrados = ordenados.filter(pk =>
+      parquesBudget.some(pb => pk.nombre.toLowerCase().includes(pb.toLowerCase()) || pb.toLowerCase().includes(pk.nombre.toLowerCase()))
+    );
+    if (filtrados.length > 0) return filtrados;
+  }
+  return ordenados;
+}
+
+// ─── ALGORITMO PRINCIPAL ──────────────────────────────────────────────────────
+function generarDias(data, p) {
+  const dias = [];
+  const esBudget = data._fuente === 'budget';
+
+  // ── Normalizar datos según fuente ─────────────────────────────────────────
+  let hasDis, hasUni;
+  let disNochesTotal, uniNochesTotal, crucNoches;
+  let disFechaIn, disFechaOut, uniFechaIn, uniFechaOut, crucFechaIn, crucFechaOut;
+  let tieneCrucero = false;
+  let hotelDisney = 'hotel Disney';
+  let hotelUniversal = 'hotel Universal';
+  let hotelCrucero = 'Disney Cruise Line';
+  let parquesBudgetDis = [];
+  let parquesBudgetUni = [];
+
+  if (esBudget) {
+    // ── Fuente: presupuesto serializado ───────────────────────────────────
+    hasDis = !!data.hasDis;
+    hasUni = !!data.hasUni;
+    tieneCrucero = !!data.crucero;
+
+    if (data.disney) {
+      disFechaIn    = data.disney.fIn  || data.fIn || '';
+      disFechaOut   = data.disney.fOut || '';
+      disNochesTotal = data.disney.noches || 0;
+      hotelDisney   = nombreHotel(data.disney);
+      parquesBudgetDis = data.disney.parques || [];
+    }
+    if (data.universal) {
+      uniFechaIn    = data.universal.fIn  || disFechaOut || '';
+      uniFechaOut   = data.universal.fOut || '';
+      uniNochesTotal = data.universal.noches || 0;
+      hotelUniversal = nombreHotel(data.universal);
+      parquesBudgetUni = data.universal.parques || [];
+    }
+    if (data.crucero) {
+      crucFechaIn  = data.crucero.fIn  || uniFechaOut || '';
+      crucFechaOut = data.crucero.fOut || '';
+      crucNoches   = data.crucero.noches || 3;
+    }
+
+    // Fechas globales fIn/fOut del budget
+    if (!disFechaIn && data.fIn) disFechaIn = data.fIn;
+
+  } else {
+    // ── Fuente: formulario cliente (legacy) ───────────────────────────────
+    const dest = data.dest || '';
+    hasDis = dest.includes('Disney') || dest.includes('Ambos');
+    hasUni = dest.includes('Universal') || dest.includes('Ambos');
+    disFechaIn  = data.fIn  || '';
+    disNochesTotal = parseInt((data.diasDis || '0').replace(/\D/g,'')) || 0;
+    uniNochesTotal = parseInt((data.diasUni || '0').replace(/\D/g,'')) || 0;
+    tieneCrucero = data.crucero && data.crucero.includes('Sí');
+    crucNoches = 3;
+
+    if (disFechaIn && disNochesTotal > 0) {
+      disFechaOut = isoDate(addDays(parseDate(disFechaIn), disNochesTotal));
+      if (hasUni) {
+        uniFechaIn  = disFechaOut;
+        uniFechaOut = isoDate(addDays(parseDate(uniFechaIn), uniNochesTotal));
+      }
+    } else if (data.fIn && data.fOut) {
+      disFechaIn  = data.fIn;
+      disFechaOut = data.fOut;
+    }
+    if (tieneCrucero && (uniFechaOut || disFechaOut)) {
+      crucFechaIn  = uniFechaOut || disFechaOut;
+      crucFechaOut = isoDate(addDays(parseDate(crucFechaIn), crucNoches));
+    }
+  }
+
+  // ── Parques configurados desde params ─────────────────────────────────────
+  const cfgDis = p.disney   || {};
+  const cfgUni = p.universal || {};
+  const parquesDisney    = hasDis ? getParquesOrdenados(cfgDis, parquesBudgetDis) : [];
+  const parquesUniversal = hasUni ? getParquesOrdenados(cfgUni, parquesBudgetUni) : [];
+
+  // ── Calcular días de parque por segmento ──────────────────────────────────
+  // Disney: noches totales - 1 (llegada) - 1 (check-out/transición)
+  // Universal: noches totales - 1 (check-in, ya fue check-out Disney ese día)
+  // Crucero: noches (predefinido por días de navegación)
+
+  let diasParqueDis = 0;
+  let diasParqueUni = 0;
+
+  if (hasDis && disNochesTotal > 0) {
+    // Día 1 = llegada+checkin, último día de Disney = check-out
+    // días de parque Disney = noches - 1 (si solo Disney) ó noches si hay más segmentos
+    diasParqueDis = Math.max(0, disNochesTotal - (hasUni || tieneCrucero ? 1 : 1));
+  }
+  if (hasUni && uniNochesTotal > 0) {
+    // El primer día de Universal: el agente va directo al parque (check-in fue el día anterior en el check-out Disney)
+    // días de parque Universal = noches (sin día de descanso para segmentos cortos)
+    diasParqueUni = Math.max(1, uniNochesTotal - (tieneCrucero ? 0 : 0));
+    // Universal: no genera descansos (parámetro noDescanso=true para este segmento corto)
+  }
+
+  // Secuencias
+  const seqDis = hasDis ? generarSecuencia(parquesDisney, diasParqueDis, cfgDis.reglas, false) : [];
+  const seqUni = hasUni ? generarSecuencia(parquesUniversal, diasParqueUni, cfgUni.reglas, true) : [];
+
+  // ── CONSTRUCCIÓN DE DÍAS POR SEGMENTO ─────────────────────────────────────
+
+  // ─ Segmento DISNEY ──────────────────────────────────────────────────────
+  if (hasDis && disFechaIn) {
+    const fInDis = parseDate(disFechaIn);
+
+    // Día 1: Llegada + Check-in Disney
+    dias.push(_diaBienvenida(fInDis, dias.length, hotelDisney, cfgDis, hasDis));
+
+    // Días intermedios Disney (parques + descansos)
+    for (let si = 0; si < seqDis.length; si++) {
+      const fecha = addDays(fInDis, 1 + si);
+      const item = seqDis[si];
+      if (item.tipo === 'parque') {
+        const pk = item.parque;
+        dias.push(_diaParque(fecha, dias.length, pk, 'disney', cfgDis));
+      } else {
+        dias.push(_diaDescanso(fecha, dias.length, item.actividades, cfgDis));
+      }
+    }
+
+    // Último día Disney: check-out (si hay segmento siguiente)
+    if ((hasUni || tieneCrucero) && disFechaOut) {
+      const fOutDis = parseDate(disFechaOut);
+      const hotelSig = hasUni ? hotelUniversal : (tieneCrucero ? hotelCrucero : '');
+      dias.push(_diaTransicion(fOutDis, dias.length, hotelDisney, hotelSig, hasUni ? 'Universal Studios' : 'Puerto Canaveral'));
+    }
+  }
+
+  // ─ Segmento UNIVERSAL ──────────────────────────────────────────────────
+  if (hasUni && uniFechaIn) {
+    const fInUni = parseDate(uniFechaIn);
+
+    // Si hay Disney, el día de transición ya tiene check-out de Disney + check-in Universal.
+    // Entonces el primer día "real" de Universal es el siguiente.
+    // Pero si Universal es el primer destino, generar día de llegada.
+    if (!hasDis) {
+      dias.push(_diaBienvenida(fInUni, dias.length, hotelUniversal, cfgUni, false));
+    }
+    // Días de parque Universal (sin descanso)
+    for (let si = 0; si < seqUni.length; si++) {
+      const fecha = hasDis ? addDays(fInUni, 1 + si) : addDays(fInUni, 1 + si);
+      const item = seqUni[si];
+      if (item.tipo === 'parque') {
+        const pk = item.parque;
+        dias.push(_diaParque(fecha, dias.length, pk, 'universal', cfgUni));
+      } else {
+        dias.push(_diaDescanso(fecha, dias.length, item.actividades, cfgUni));
+      }
+    }
+
+    // Último día Universal: si hay crucero → día de transición a crucero
+    if (tieneCrucero && uniFechaOut && crucFechaIn) {
+      const fOutUni = parseDate(uniFechaOut);
+      dias.push(_diaTransicionCrucero(fOutUni, dias.length, hotelUniversal));
+    } else if (!tieneCrucero && uniFechaOut) {
+      // Último día: salida
+      dias.push(_diaSalida(parseDate(uniFechaOut), dias.length));
+    }
+  }
+
+  // ─ Segmento CRUCERO ────────────────────────────────────────────────────
+  if (tieneCrucero && crucFechaIn) {
+    const fInCruc = parseDate(crucFechaIn);
+    // Crucero: dias predefinidos según tipo
+    const diasCrucero = _diasCrucero(fInCruc, dias.length, crucNoches);
+    diasCrucero.forEach(d => dias.push(d));
+    // Día de salida tras crucero
+    if (crucFechaOut) {
+      dias.push(_diaSalida(parseDate(crucFechaOut), dias.length));
+    }
+  }
+
+  // ─ Solo si no hay crucero ni Universal y hay Disney solo ───────────────
+  if (hasDis && !hasUni && !tieneCrucero && disFechaOut) {
+    dias.push(_diaSalida(parseDate(disFechaOut), dias.length));
+  }
+
+  // Numerar correlativamente
+  dias.forEach((d, i) => { d.idx = i + 1; });
+  return dias;
+}
+
+// ─── CONSTRUCTORES DE DÍAS ───────────────────────────────────────────────────
+function _diaBienvenida(fecha, idx, hotelNombre, cfg, esDisney) {
+  const actLlegada = esDisney
+    ? (cfg.reglas?.dia_llegada || 'disney_springs')
+    : (cfg.reglas?.dia_llegada || 'citywalk');
+  const actTexto = actLlegada === 'disney_springs'
+    ? 'Paseo por Disney Springs: compras, gastronomía y entretenimiento sin ticket.'
+    : actLlegada === 'citywalk'
+    ? 'Paseo por CityWalk Universal: restaurantes, tiendas y ambiente de bienvenida.'
+    : 'Descanso en el hotel. Piscina o spa disponibles.';
+  const actLabel = actLlegada === 'disney_springs' ? 'Disney Springs'
+    : actLlegada === 'citywalk' ? 'CityWalk Universal' : 'Actividad libre';
+  return {
+    idx, fecha, tipo:'llegada',
+    titulo:'✈️ Llegada a Orlando',
+    subtitulo:'Check-in en ' + hotelNombre,
+    confirmado: false, notas:'',
+    bloques:[
+      {icono:'✈️', hora:'Variable', periodo:'Según vuelo', label:'Vuelo y traslado', texto:'Vuelo hacia Orlando. Llegada al aeropuerto MCO y traslado al hotel.'},
+      {icono:'🏨', hora:'15:00', periodo:'Tarde', label:'Check-in · ' + hotelNombre, texto:'Check-in en ' + hotelNombre + '. Dejar equipaje y refrescarse para la aventura que comienza.'},
+      {icono:'🌅', hora:'17:00', periodo:'Tarde', label:actLabel, texto: actTexto},
+      {icono:'🍽️', hora:'19:30', periodo:'Noche', label:'Cena', texto:'Cena en el hotel o en los restaurantes del área.'},
+      {icono:'🌙', hora:'21:30', periodo:'Noche', label:'Descanso', texto:'Descanso. ¡Mañana comienza la magia!'},
+    ]
+  };
+}
+
+function _diaParque(fecha, idx, pk, destino, cfg) {
+  const esIntense = pk.intensidad === 'alto';
+  const esMedio   = pk.intensidad === 'medio';
+  const notas     = cfg?.reglas?.notas_generales || '';
+  const esDis     = destino === 'disney';
+  return {
+    idx, fecha, tipo: destino,
+    titulo: '🎢 ' + pk.nombre,
+    subtitulo: (esIntense ? '🔴 Día intenso' : esMedio ? '🟡 Día moderado' : '🟢 Día tranquilo') + ' · ' + (esDis ? 'Disney' : 'Universal'),
+    confirmado: false, notas:'',
+    bloques:[
+      {icono:'🌅', hora:'07:30', periodo:'Mañana', label:'Desayuno y preparación', texto:'Desayuno temprano en el hotel. Preparar mochila con protector solar, agua y snacks.'},
+      {icono:'🎢', hora:'09:00', periodo:'Mañana', label:'Apertura · ' + pk.nombre, texto:'Llegar a la apertura del parque para aprovechar las atracciones con menor espera.' + (esIntense ? ' Priorizar las atracciones más populares primero.' : '')},
+      {icono:'☀️', hora:'13:00', periodo:'Tarde', label:'Almuerzo en el parque', texto:'Almuerzo en restaurante del parque o food court.'},
+      {icono:'🎡', hora:'14:30', periodo:'Tarde', label:'Tarde en el parque', texto: esIntense ? 'Continuar con atracciones y espectáculos de la tarde. 30 min de descanso si es necesario.' : esMedio ? 'Recorrido tranquilo por las zonas restantes del parque.' : 'Tarde relajada explorando el parque sin apuro.'},
+      {icono:'🌙', hora:'19:00', periodo:'Noche', label:'Cierre del día', texto: pk.id === 'magic_kingdom' ? '🎆 Quedarse para los fuegos artificiales "Happily Ever After" (aprox. 21:00). ¡Vale la pena!' : pk.id === 'epcot' ? '🌟 Disfrutar el espectáculo nocturno de EPCOT antes de salir.' : 'Cena en el parque o regreso al hotel.' + (notas ? '\n\n💡 ' + notas : '')},
+    ]
+  };
+}
+
+function _diaDescanso(fecha, idx, acts, cfg) {
+  const act = (acts || ['Descanso']).slice(0,3);
+  const act1 = act[0] || 'Descanso libre';
+  return {
+    idx, fecha, tipo:'descanso',
+    titulo:'🌴 Día de descanso',
+    subtitulo: act1,
+    confirmado: false, notas:'',
+    bloques:[
+      {icono:'😴', hora:'09:00', periodo:'Mañana', label:'Mañana libre', texto:'Mañana de descanso. Dormir hasta tarde, desayunar sin apuro. Los pies lo agradecerán.'},
+      {icono:'🛍️', hora:'11:00', periodo:'Mañana / Tarde', label:'Actividad del día', texto: act.join(' · ') + '. A elección del grupo según energía y preferencias.'},
+      {icono:'🏊', hora:'15:00', periodo:'Tarde', label:'Tarde en el hotel', texto:'Tarde en las instalaciones del hotel. Piscina, spa o simplemente descansar.'},
+      {icono:'🍽️', hora:'19:30', periodo:'Noche', label:'Cena tranquila', texto:'Cena sin apuro. Mañana vuelve la acción.'},
+    ]
+  };
+}
+
+// Día de transición entre Disney y Universal (check-out Disney + check-in Universal)
+function _diaTransicion(fecha, idx, hotelSalida, hotelLlegada, zonaLlegada) {
+  return {
+    idx, fecha, tipo:'llegada',
+    titulo:'🏨 Cambio de hotel',
+    subtitulo:'Check-out ' + hotelSalida + ' · Check-in ' + (hotelLlegada || 'hotel Universal'),
+    confirmado: false, notas:'',
+    bloques:[
+      {icono:'⏰', hora:'08:00', periodo:'Mañana', label:'Desayuno y preparación', texto:'Último desayuno en ' + hotelSalida + '. Preparar equipaje para el traslado.'},
+      {icono:'🧳', hora:'10:00', periodo:'Mañana', label:'Check-out · ' + hotelSalida, texto:'Check-out del hotel. Entrega de habitaciones y traslado al nuevo alojamiento.'},
+      {icono:'🏨', hora:'14:00', periodo:'Tarde', label:'Check-in · ' + (hotelLlegada || 'hotel Universal'), texto:'Check-in en ' + (hotelLlegada || 'hotel Universal') + '. Instalarse y descansar un momento.'},
+      {icono:'🌅', hora:'16:00', periodo:'Tarde', label:'Llegada a ' + zonaLlegada, texto:'Primeras horas en ' + zonaLlegada + '. Explorar el área del hotel y orientarse.'},
+      {icono:'🍽️', hora:'19:30', periodo:'Noche', label:'Cena', texto:'Cena en el hotel o en los restaurantes del área. Mañana arranca Universal.'},
+    ]
+  };
+}
+
+// Día de transición Universal → Crucero
+function _diaTransicionCrucero(fecha, idx, hotelSalida) {
+  return {
+    idx, fecha, tipo:'crucero',
+    titulo:'🚢 Embarque en Crucero',
+    subtitulo:'Check-out ' + hotelSalida + ' · Puerto Canaveral',
+    confirmado: false, notas:'',
+    bloques:[
+      {icono:'⏰', hora:'08:00', periodo:'Mañana', label:'Desayuno y preparación', texto:'Último desayuno en ' + hotelSalida + '. Preparar equipaje para el embarque.'},
+      {icono:'🧳', hora:'10:00', periodo:'Mañana', label:'Check-out · ' + hotelSalida, texto:'Check-out del hotel Universal. Los bolsos grandes los retira el equipo del crucero.'},
+      {icono:'🚌', hora:'11:30', periodo:'Mediodía', label:'Traslado a Puerto Canaveral', texto:'Traslado al puerto de embarque en Cape Canaveral (aprox. 45 min desde Universal).'},
+      {icono:'🎉', hora:'13:00', periodo:'Tarde', label:'Embarque · Disney Cruise Line', texto:'Embarque en el crucero. Check-in del barco, recorrido de orientación, y primer almuerzo a bordo.'},
+      {icono:'⚓', hora:'18:00', periodo:'Tarde / Noche', label:'Salida del puerto', texto:'El barco zarpa desde Puerto Canaveral. Primer atardecer en el mar. Cena en restaurante rotativo a bordo.'},
+    ]
+  };
+}
+
+// Días de crucero predefinidos según cantidad de noches
+function _diasCrucero(fInCruc, idxBase, noches) {
+  const dias = [];
+  // El día de embarque ya fue generado en _diaTransicionCrucero
+  // Aquí generamos los días a bordo
+
+  if (noches >= 3) {
+    // Día en Nassau, Bahamas
+    const fechaNassau = addDays(fInCruc, 1);
+    dias.push({
+      idx: idxBase + dias.length, fecha: fechaNassau, tipo:'crucero',
+      titulo:'🏝️ Nassau, Bahamas',
+      subtitulo:'Puerto Canaveral → Nassau · Día en tierra',
+      confirmado: false, notas:'',
+      bloques:[
+        {icono:'🌊', hora:'06:00', periodo:'Mañana temprano', label:'Llegada a Nassau', texto:'El barco arriba a Nassau, Bahamas. Desayuno a bordo mientras el crucero ingresa al puerto.'},
+        {icono:'⚓', hora:'08:00', periodo:'Mañana', label:'Desembarco en Nassau', texto:'Desembarco en el puerto Nassau. Horario de regreso al barco informado por la naviera (generalmente 18:00 hs, sujeto a autoridades portuarias).'},
+        {icono:'🏖️', hora:'09:00', periodo:'Mañana / Tarde', label:'Nassau libre', texto:'Nassau libre: Paradise Island, Atlantis, playas, mercado de artesanías, tiendas duty-free. A elección del grupo.'},
+        {icono:'🚢', hora:'18:00', periodo:'Tarde', label:'Regreso al barco', texto:'Regreso al barco antes del horario indicado por la naviera. Zarpe hacia el próximo destino.'},
+        {icono:'🍽️', hora:'20:00', periodo:'Noche', label:'Cena a bordo', texto:'Cena en restaurante rotativo Disney. Espectáculo nocturno en el teatro del crucero.'},
+      ]
+    });
+  }
+
+  if (noches >= 3) {
+    // Día en Castaway Cay (isla privada Disney)
+    const fechaCastaway = addDays(fInCruc, 2);
+    dias.push({
+      idx: idxBase + dias.length, fecha: fechaCastaway, tipo:'crucero',
+      titulo:'🏖️ Castaway Cay',
+      subtitulo:'Isla privada de Disney · Bahamas',
+      confirmado: false, notas:'',
+      bloques:[
+        {icono:'🌅', hora:'07:00', periodo:'Mañana', label:'Amanecer en Castaway Cay', texto:'El barco arriba a Castaway Cay, isla privada de Disney en Bahamas. Desayuno a bordo.'},
+        {icono:'🏖️', hora:'08:30', periodo:'Mañana', label:'Playa privada Disney', texto:'Acceso a la playa privada de Disney. Tumbonas, sombrillas, snorkeling, kayaks y deportes acuáticos incluidos.'},
+        {icono:'🍔', hora:'12:00', periodo:'Mediodía', label:'Almuerzo en la playa', texto:'BBQ en la playa Castaway Cay incluido en el paquete. Menú familiar.'},
+        {icono:'🌊', hora:'14:00', periodo:'Tarde', label:'Tarde en la isla', texto:'Tarde libre en la isla. Actividades acuáticas, paseos en bicicleta o simplemente descansar en la playa.'},
+        {icono:'⚓', hora:'17:00', periodo:'Tarde', label:'Regreso al barco', texto:'Regreso al crucero. Zarpe hacia Puerto Canaveral para el último día de navegación.'},
+        {icono:'🎉', hora:'20:00', periodo:'Noche', label:'Última noche a bordo', texto:'Última cena a bordo. Espectáculo final y festejo de despedida en el crucero.'},
+      ]
+    });
+  }
+
+  // Si tiene más noches, agregar día de navegación extra
+  if (noches >= 4) {
+    for (let n = 3; n < noches; n++) {
+      const fechaNav = addDays(fInCruc, n);
+      dias.push({
+        idx: idxBase + dias.length, fecha: fechaNav, tipo:'crucero',
+        titulo:'🌊 Día de navegación',
+        subtitulo:'A bordo · Disney Cruise Line',
+        confirmado: false, notas:'',
+        bloques:[
+          {icono:'🌅', hora:'08:00', periodo:'Mañana', label:'Desayuno a bordo', texto:'Desayuno en buffet o restaurante. Mañana relajada en el barco.'},
+          {icono:'🎭', hora:'10:00', periodo:'Mañana / Tarde', label:'Actividades a bordo', texto:'Día completo a bordo: pool deck, shows, spa, juegos, personajes Disney y actividades para niños.'},
+          {icono:'🍽️', hora:'13:00', periodo:'Mediodía', label:'Almuerzo', texto:'Almuerzo en restaurante o buffet del barco.'},
+          {icono:'🌙', hora:'20:00', periodo:'Noche', label:'Cena y show final', texto:'Cena en restaurante rotativo. Show de Broadway Disney en el teatro del crucero.'},
+        ]
+      });
+    }
+  }
+
+  return dias;
+}
+
+function _diaSalida(fecha, idx) {
+  return {
+    idx, fecha, tipo:'salida',
+    titulo:'✈️ Regreso a casa',
+    subtitulo:'Check-out y vuelo de regreso',
+    confirmado: false, notas:'',
+    bloques:[
+      {icono:'⏰', hora:'07:00', periodo:'Mañana', label:'Último desayuno', texto:'Último desayuno. Momento para recordar los mejores momentos del viaje.'},
+      {icono:'🧳', hora:'10:00', periodo:'Mañana', label:'Check-out', texto:'Check-out del hotel / desembarco del crucero. Preparar equipaje.'},
+      {icono:'🚌', hora:'Variable', periodo:'Según vuelo', label:'Traslado al aeropuerto', texto:'Traslado al aeropuerto MCO. Tiempo estimado: 30-60 minutos.'},
+      {icono:'✈️', hora:'Variable', periodo:'Según vuelo', label:'Vuelo de regreso', texto:'Embarque y vuelo de regreso. ¡Hasta la próxima Orlando! 🌟'},
+    ]
+  };
 }
 
 // ─── RENDER ──────────────────────────────────────────────────────────────────
@@ -524,17 +789,24 @@ function formatFecha(d) {
   return `${DIAS_SEM[d.getDay()]} ${d.getDate()} de ${MESES[d.getMonth()]}`;
 }
 
-function renderResumen(cliente, dias) {
-  const totalParques = dias.filter(d => d.tipo === 'disney' || d.tipo === 'universal').length;
+function renderResumen(data, dias) {
+  const totalParques  = dias.filter(d => d.tipo === 'disney' || d.tipo === 'universal').length;
   const totalDescanso = dias.filter(d => d.tipo === 'descanso').length;
-  const dest = cliente.dest || '';
+  const totalCrucero  = dias.filter(d => d.tipo === 'crucero').length;
+  // Viajeros: soporta tanto formato budget (nombre/nAdultos/nMenores) como datos (nAdu/nMen)
+  const nAdu = data.nAdultos || data.nAdu || 0;
+  const nMen = data.nMenores || data.nMen || 0;
   const box = document.getElementById('resumen-boxes');
-  box.innerHTML = `
+  let html = `
     <div class="res-box"><div class="res-icon">📅</div><div class="res-val">${dias.length}</div><div class="res-lbl">Días totales</div></div>
-    <div class="res-box"><div class="res-icon">🎢</div><div class="res-val">${totalParques}</div><div class="res-lbl">Días de parque</div></div>
-    <div class="res-box"><div class="res-icon">🌴</div><div class="res-val">${totalDescanso}</div><div class="res-lbl">Días de descanso</div></div>
-    <div class="res-box"><div class="res-icon">👥</div><div class="res-val">${(cliente.nAdu||0) + (cliente.nMen||0)}</div><div class="res-lbl">Viajeros</div></div>
-  `;
+    <div class="res-box"><div class="res-icon">🎢</div><div class="res-val">${totalParques}</div><div class="res-lbl">Días de parque</div></div>`;
+  if (totalCrucero > 0) {
+    html += `<div class="res-box"><div class="res-icon">🚢</div><div class="res-val">${totalCrucero}</div><div class="res-lbl">Días de crucero</div></div>`;
+  } else {
+    html += `<div class="res-box"><div class="res-icon">🌴</div><div class="res-val">${totalDescanso}</div><div class="res-lbl">Días de descanso</div></div>`;
+  }
+  html += `<div class="res-box"><div class="res-icon">👥</div><div class="res-val">${nAdu + nMen}</div><div class="res-lbl">Viajeros</div></div>`;
+  box.innerHTML = html;
 }
 
 function renderDias(dias) {
@@ -553,6 +825,12 @@ function renderDias(dias) {
         </div>
       </div>
     `).join('');
+
+    const badgeLabel =
+      d.tipo === 'disney'    ? '🏰 Disney' :
+      d.tipo === 'universal' ? '🎬 Universal' :
+      d.tipo === 'crucero'   ? '🚢 Crucero' :
+      d.tipo === 'llegada'   ? '✈️ Llegada' : '✈️ Salida';
 
     return `
       <div class="day-card" id="day-${i}">
@@ -584,11 +862,7 @@ function renderDias(dias) {
               <option value="universal|Volcano Bay">🌊 Volcano Bay</option>
             </optgroup>
           </select>` : `
-          <span class="day-badge ${d.tipo}">${
-            d.tipo === 'disney' ? '🏰 Disney' :
-            d.tipo === 'universal' ? '🎬 Universal' :
-            d.tipo === 'llegada' ? '✈️ Llegada' : '✈️ Salida'
-          }</span>`}
+          <span class="day-badge ${d.tipo}">${badgeLabel}</span>`}
           <div class="day-confirmed ${d.confirmado ? 'on' : ''}" 
             onclick="event.stopPropagation();toggleConfirm(${i})" 
             title="Marcar como confirmado">✓</div>
@@ -803,15 +1077,19 @@ async function enviarWP() {
   btn.disabled = true;
 
   try {
-    const nombre = clienteData?.nom || '';
+    const nombre = clienteData?.nombre || clienteData?.nom || '';
     const agencia = params?.agente?.agencia || params?.agente?.nombre || 'Con Magui a Disney';
     const dias = diasGenerados.length;
     const parques = diasGenerados.filter(d => d.tipo === 'disney' || d.tipo === 'universal').length;
 
-    // Construir URL larga con modo cliente
+    // Construir URL larga con modo cliente (soporta ?budget= y ?data= legacy)
     const baseUrl = window.location.href.split('?')[0];
-    const dataParam = new URLSearchParams(window.location.search).get('data') || '';
-    const urlLarga = baseUrl + '?modo=cliente&data=' + dataParam;
+    const urlSearch = new URLSearchParams(window.location.search);
+    const budgetParam = urlSearch.get('budget') || '';
+    const dataParam   = urlSearch.get('data')   || '';
+    const urlLarga = budgetParam
+      ? baseUrl + '?modo=cliente&budget=' + budgetParam
+      : baseUrl + '?modo=cliente&data=' + dataParam;
 
     // Acortar con TinyURL (CORS-friendly, sin API key)
     let linkFinal = urlLarga;
@@ -852,6 +1130,32 @@ async function enviarWP() {
   }
 }
 
+// ─── RENDERIZAR PROMOS AL FINAL ──────────────────────────────────────────────
+function renderPromos(data) {
+  const promos = data.promos || [];
+  if (!promos.length) return;
+  // Insertar bloque de promos antes del disclaimer
+  const disclaimer = document.querySelector('.disclaimer');
+  if (!disclaimer) return;
+  const promoDiv = document.createElement('div');
+  promoDiv.style.cssText = 'margin:0 0 20px 0;border-radius:14px;overflow:hidden;border:2px solid #3A7A5A;box-shadow:0 4px 18px rgba(58,122,90,.15)';
+  const header = '<div style="background:linear-gradient(135deg,#1A4A2A,#0F3019);padding:14px 20px;display:flex;align-items:center;gap:10px;">' +
+    '<div style="font-size:20px">🎁</div>' +
+    '<div>' +
+      '<div style="font-family:\'Playfair Display\',serif;font-size:15px;font-weight:700;color:#E8C96A;">Promoción Activa</div>' +
+      '<div style="font-size:10px;color:rgba(255,255,255,.6);margin-top:2px;">Beneficios incluidos en este presupuesto confirmado</div>' +
+    '</div></div>';
+  const items = promos.map(p =>
+    `<div style="padding:10px 20px;border-bottom:1px solid rgba(0,0,0,.06);display:flex;align-items:center;gap:10px;background:white;">` +
+    `<div style="font-size:16px">${p.startsWith('📝') ? '📋' : ''}</div>` +
+    `<div style="font-size:13px;color:#1A4A2A;font-weight:600;">${p}</div></div>`
+  ).join('');
+  const footer = '<div style="padding:10px 20px;background:#F0FFF5;font-size:10px;color:#3A7A5A;font-style:italic;">' +
+    '✨ Las promociones son válidas al momento de la reserva. Consultá a tu agente por los detalles de cada beneficio.</div>';
+  promoDiv.innerHTML = header + items + footer;
+  disclaimer.parentNode.insertBefore(promoDiv, disclaimer);
+}
+
 // ─── INIT ────────────────────────────────────────────────────────────────────
 async function init() {
   clienteData = parsearURL();
@@ -859,35 +1163,62 @@ async function init() {
     document.getElementById('loading').innerHTML = `
       <div style="text-align:center;color:white;padding:40px">
         <div style="font-size:40px;margin-bottom:16px">⚠️</div>
-        <div style="font-family:'Playfair Display',serif;font-size:22px;margin-bottom:10px">Sin datos de cliente</div>
-        <div style="font-size:13px;opacity:.6">Abrí el itinerario desde el presupuesto del cliente.</div>
+        <div style="font-family:'Playfair Display',serif;font-size:22px;margin-bottom:10px">Sin datos de presupuesto</div>
+        <div style="font-size:13px;opacity:.6">Abrí el itinerario desde el botón "Generar Itinerario" en el presupuesto confirmado.</div>
       </div>`;
     return;
   }
 
   params = await cargarParams();
 
-  // Header
-  const dest = clienteData.dest || 'Orlando';
+  // ── Header ─────────────────────────────────────────────────────────────
+  // Soporta tanto formato budget (hasDis/hasUni) como legacy (dest)
+  const esBudget = clienteData._fuente === 'budget';
+  const hasDis   = esBudget ? !!clienteData.hasDis : (clienteData.dest||'').includes('Disney') || (clienteData.dest||'').includes('Ambos');
+  const hasUni   = esBudget ? !!clienteData.hasUni : (clienteData.dest||'').includes('Universal') || (clienteData.dest||'').includes('Ambos');
+  const hasCruc  = esBudget ? !!clienteData.crucero : false;
+
   document.getElementById('hdr-destino').textContent =
-    dest.includes('Ambos') ? 'Orlando' : dest.includes('Disney') ? 'Disney World' : 'Universal Orlando';
+    (hasDis && hasUni && hasCruc) ? 'Orlando · Crucero Disney' :
+    (hasDis && hasUni) ? 'Orlando' :
+    hasDis ? 'Disney World' :
+    hasUni ? 'Universal Orlando' : 'Orlando';
+
   document.getElementById('hdr-sub').textContent =
-    dest.includes('Ambos') ? 'Disney World · Universal Orlando · 2026' :
-    dest.includes('Disney') ? 'Disney World · Orlando 2026' : 'Universal Orlando 2026';
-  document.getElementById('hdr-cliente').textContent = clienteData.nom || '—';
-  const viajeros = [];
-  if (clienteData.nAdu) viajeros.push(`${clienteData.nAdu} adulto${clienteData.nAdu>1?'s':''}`);
-  if (clienteData.nMen) viajeros.push(`${clienteData.nMen} menor${clienteData.nMen>1?'es':''}`);
-  document.getElementById('hdr-viajeros').textContent = viajeros.join(' · ') || '—';
+    (hasDis && hasUni && hasCruc) ? 'Disney World · Universal Orlando · Crucero Disney · 2026' :
+    (hasDis && hasUni) ? 'Disney World · Universal Orlando · 2026' :
+    hasDis ? 'Disney World · Orlando 2026' :
+    hasUni ? 'Universal Orlando 2026' : '2026';
 
-  const fIn  = new Date(clienteData.fIn  + 'T12:00:00');
-  const fOut = new Date(clienteData.fOut + 'T12:00:00');
-  document.getElementById('hdr-periodo').textContent =
-    `${fIn.getDate()} ${MESES[fIn.getMonth()]} al ${fOut.getDate()} ${MESES[fOut.getMonth()]} ${fOut.getFullYear()}`;
-  const noches = Math.round((fOut - fIn) / 86400000);
-  document.getElementById('hdr-noches').textContent = `${noches} noches`;
+  // Nombre cliente
+  const nomCliente = clienteData.nombre || clienteData.nom || '—';
+  document.getElementById('hdr-cliente').textContent = nomCliente;
 
-  // Footer agente
+  // Viajeros
+  const nAdu = clienteData.nAdultos || clienteData.nAdu || 0;
+  const nMen = clienteData.nMenores || clienteData.nMen || 0;
+  const vArr = [];
+  if (nAdu) vArr.push(`${nAdu} adulto${nAdu > 1 ? 's' : ''}`);
+  if (nMen) vArr.push(`${nMen} menor${nMen > 1 ? 'es' : ''}`);
+  document.getElementById('hdr-viajeros').textContent = vArr.join(' · ') || '—';
+
+  // Período: usar fIn del primer segmento y fOut del último
+  let fInGlobal = clienteData.fIn || (clienteData.disney && clienteData.disney.fIn) || '';
+  let fOutGlobal = clienteData.fOut ||
+    (clienteData.crucero && clienteData.crucero.fOut) ||
+    (clienteData.universal && clienteData.universal.fOut) ||
+    (clienteData.disney && clienteData.disney.fOut) || '';
+
+  if (fInGlobal && fOutGlobal) {
+    const fIn  = parseDate(fInGlobal);
+    const fOut = parseDate(fOutGlobal);
+    document.getElementById('hdr-periodo').textContent =
+      `${fIn.getDate()} ${MESES[fIn.getMonth()]} al ${fOut.getDate()} ${MESES[fOut.getMonth()]} ${fOut.getFullYear()}`;
+    const noches = Math.round((fOut - fIn) / 86400000);
+    document.getElementById('hdr-noches').textContent = `${noches} noches`;
+  }
+
+  // ── Footer agente ───────────────────────────────────────────────────────
   const ag = params.agente || {};
   document.getElementById('footer-agente-nombre').textContent = ag.agencia || ag.nombre || 'Con Magui a Disney';
   const contactos = [];
@@ -900,16 +1231,18 @@ async function init() {
     return c;
   }).join('  ·  ');
 
-  // Generar y renderizar días
+  // ── Generar días y renderizar ───────────────────────────────────────────
   diasGenerados = generarDias(clienteData, params);
   renderResumen(clienteData, diasGenerados);
   renderDias(diasGenerados);
+
+  // ── Promos (Etapa 5) ────────────────────────────────────────────────────
+  renderPromos(clienteData);
 
   // Ocultar loading
   document.getElementById('loading').style.display = 'none';
 }
 
-init();
-</script>
+init();</script>
 </body>
 </html>
