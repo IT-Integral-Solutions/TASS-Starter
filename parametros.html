@@ -556,7 +556,9 @@ async function cargarParametros() {
     }
     // Disney
     if (data.disney) {
-      if (data.disney.parques) disneyParks = data.disney.parques;
+      if (data.disney.parques) {
+        disneyParks = data.disney.parques.map(p => ({...p, tipo: PARK_TIPO_MAP[p.id] || p.tipo || 'Temático'}));
+      }
       if (data.disney.reglas) {
         const r = data.disney.reglas;
         document.getElementById('dis-descanso').value = r.descanso_cada_dias_parque || 2;
@@ -568,7 +570,9 @@ async function cargarParametros() {
     }
     // Universal
     if (data.universal) {
-      if (data.universal.parques) universalParks = data.universal.parques;
+      if (data.universal.parques) {
+        universalParks = data.universal.parques.map(p => ({...p, tipo: PARK_TIPO_MAP[p.id] || p.tipo || 'Temático'}));
+      }
       if (data.universal.reglas) {
         const r = data.universal.reglas;
         document.getElementById('uni-descanso').value = r.descanso_cada_dias_parque || 2;
