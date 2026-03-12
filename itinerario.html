@@ -225,7 +225,7 @@ body{font-family:'Montserrat',sans-serif;background:#F0EBE5;min-height:100vh;pad
     <div class="itin-header">
       <div class="hdr-inner">
         <div class="hdr-logo">
-          <img src="logo-con-magui.png" alt="Con Magui a Disney" onerror="this.src='https://raw.githubusercontent.com/IT-Integral-Solutions/TASS-Starter/main/logo-con-magui.png';this.onerror=null;">
+          <img src="https://raw.githubusercontent.com/IT-Integral-Solutions/TASS-Starter/main/logo-con-magui.png" alt="Con Magui a Disney">
         </div>
         <div class="hdr-text">
           <div class="hdr-pre">✦ Itinerario Personalizado de Viaje ✦</div>
@@ -261,7 +261,7 @@ body{font-family:'Montserrat',sans-serif;background:#F0EBE5;min-height:100vh;pad
 
     <div class="itin-footer">
       <div class="footer-left">
-        <img src="logo-con-magui.png" alt="Con Magui a Disney" class="footer-logo-agencia" onerror="this.src='https://raw.githubusercontent.com/IT-Integral-Solutions/TASS-Starter/main/logo-con-magui.png';this.onerror=null;">
+        <img src="https://raw.githubusercontent.com/IT-Integral-Solutions/TASS-Starter/main/logo-con-magui.png" alt="Con Magui a Disney" class="footer-logo-agencia">
         <div class="footer-agente-info">
           <div class="footer-nombre" id="footer-agente-nombre">Con Magui a Disney</div>
           <div class="footer-contacto" id="footer-agente-contacto"></div>
@@ -608,18 +608,56 @@ function cambiarTipoDia(i, valor) {
   const head    = document.querySelector(`#day-${i} .day-head`);
   const titEl   = document.querySelector(`#day-${i} .day-titulo`);
   const subEl   = document.querySelector(`#day-${i} .day-subtitulo`);
+  const bloquesEl = document.querySelector(`#day-${i} .bloques`);
 
   head.className = `day-head ${nuevoTipo}`;
 
-  if (nuevoTipo === 'disney' && nombreParque) {
+  if ((nuevoTipo === 'disney' || nuevoTipo === 'universal') && nombreParque) {
+    // Actualizar título
     if (titEl) { titEl.textContent = `🎢 ${nombreParque}`; titEl.removeAttribute('contenteditable'); titEl.style.cursor=''; }
-    if (subEl) subEl.textContent = `🏰 Día en Disney · Editá los bloques abajo`;
-  } else if (nuevoTipo === 'universal' && nombreParque) {
-    if (titEl) { titEl.textContent = `🎢 ${nombreParque}`; titEl.removeAttribute('contenteditable'); titEl.style.cursor=''; }
-    if (subEl) subEl.textContent = `🎬 Día en Universal · Editá los bloques abajo`;
+    if (subEl) subEl.textContent = nuevoTipo === 'disney'
+      ? `🏰 Día en Disney · Editá los bloques abajo`
+      : `🎬 Día en Universal · Editá los bloques abajo`;
+
+    // Regenerar bloques con estructura de día de parque
+    const pkFake = { id: nombreParque.toLowerCase().replace(/\s/g,'_'), nombre: nombreParque, intensidad: 'alto' };
+    const cfgFake = nuevoTipo === 'disney' ? params.disney : params.universal;
+    const nuevosBloques = bloquesParque(pkFake, clienteData, cfgFake);
+    if (bloquesEl) bloquesEl.innerHTML = nuevosBloques.map(b => `
+      <div class="bloque">
+        <div class="bloque-hora">
+          <div class="bloque-icon">${b.icono}</div>
+          <div class="bloque-time">${b.hora}</div>
+          <div class="bloque-periodo">${b.periodo}</div>
+        </div>
+        <div class="bloque-content">
+          <div class="bloque-lbl" contenteditable="true" spellcheck="false" style="outline:none;cursor:text">${b.label}</div>
+          <textarea class="bloque-texto" rows="2" oninput="autoResize(this)">${b.texto}</textarea>
+        </div>
+      </div>
+    `).join('');
+    setTimeout(() => bloquesEl?.querySelectorAll('textarea').forEach(autoResize), 50);
+
   } else {
+    // Volver a descanso
     if (titEl) { titEl.textContent = '🌴 Día libre'; titEl.setAttribute('contenteditable','true'); titEl.style.cursor='text'; }
     if (subEl) subEl.textContent = '🌴 Descanso y actividades opcionales';
+    const acts = params?.disney?.reglas?.actividades_descanso || ['Actividad libre'];
+    const nuevosBloques = bloquesDescanso(acts);
+    if (bloquesEl) bloquesEl.innerHTML = nuevosBloques.map(b => `
+      <div class="bloque">
+        <div class="bloque-hora">
+          <div class="bloque-icon">${b.icono}</div>
+          <div class="bloque-time">${b.hora}</div>
+          <div class="bloque-periodo">${b.periodo}</div>
+        </div>
+        <div class="bloque-content">
+          <div class="bloque-lbl" contenteditable="true" spellcheck="false" style="outline:none;cursor:text">${b.label}</div>
+          <textarea class="bloque-texto" rows="2" oninput="autoResize(this)">${b.texto}</textarea>
+        </div>
+      </div>
+    `).join('');
+    setTimeout(() => bloquesEl?.querySelectorAll('textarea').forEach(autoResize), 50);
   }
 }
 
