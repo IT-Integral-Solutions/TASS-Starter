@@ -2794,7 +2794,7 @@ function buildPDFSummary(){
 // Empaqueta todo lo confirmado en el presupuesto para pasarlo al itinerario
 
 function serializarPresupuesto(){
-  // ── Leer datos del formulario original (?data= → ISO YYYY-MM-DD) ──
+  // ── Leer datos del formulario (?data= del formulario, fechas ISO YYYY-MM-DD) ──
   var urlParams = new URLSearchParams(window.location.search);
   var rawData = urlParams.get('data') || '';
   var d = {};
@@ -2802,130 +2802,135 @@ function serializarPresupuesto(){
     try { d = JSON.parse(atob(rawData)); } catch(e2){}
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────
+  // ── Helper: "4 días" → 4 ─────────────────────────────────────────
   function parseDias(str){
-    if(!str) return 0;
-    var m = String(str).match(/^(\d+)/);
+    var m = String(str||'').match(/^(\d+)/);
     return m ? parseInt(m[1]) : 0;
   }
 
-  var MESES_ES = {enero:1,febrero:2,marzo:3,abril:4,mayo:5,junio:6,
-    julio:7,agosto:8,septiembre:9,octubre:10,noviembre:11,diciembre:12};
-  function parseFechaES(txt){
-    if(!txt) return '';
-    txt = String(txt).trim().toLowerCase();
-    if(/^\d{4}-\d{2}-\d{2}$/.test(txt)) return txt;
-    var m = txt.match(/(\d{1,2})\s+([a-záéíóú]+)\s+(\d{4})/);
-    if(m){
-      var mes = MESES_ES[m[2]];
-      if(mes) return m[3]+'-'+String(mes).padStart(2,'0')+'-'+String(m[1]).padStart(2,'0');
-    }
+  // ── Helper: "01 Septiembre 2026" → "2026-09-01" ──────────────────
+  var MESES = {enero:1,febrero:2,marzo:3,abril:4,mayo:5,junio:6,
+               julio:7,agosto:8,septiembre:9,octubre:10,noviembre:11,diciembre:12};
+  function fechaESaISO(txt){
+    txt = String(txt||'').trim().toLowerCase();
+    if(/^\d{4}-\d{2}-\d{2}$/.test(txt)) return txt; // ya es ISO
+    var m = txt.match(/(\d{1,2})\s+([a-z\u00e1\u00e9\u00ed\u00f3\u00fa\u00fc]+)\s+(\d{4})/);
+    if(m && MESES[m[2]]) return m[3]+'-'+('0'+MESES[m[2]]).slice(-2)+'-'+('0'+m[1]).slice(-2);
     return '';
   }
 
-  function addDiasISO(iso, n){
+  // ── Helper: sumar N días a ISO ────────────────────────────────────
+  function addDias(iso, n){
     if(!iso) return '';
-    var dt = new Date(iso + 'T12:00:00');
-    dt.setDate(dt.getDate() + n);
+    var dt = new Date(iso+'T12:00:00');
+    dt.setDate(dt.getDate()+n);
     return dt.toISOString().slice(0,10);
   }
 
-  // ── Destino y noches ──────────────────────────────────────────────
-  var dest = d.dest || '';
+  // ── Helper: leer texto de elemento por ID → convertir a ISO ──────
+  function leerFechaDOM(id){
+    var el = document.getElementById(id);
+    return el ? fechaESaISO(el.textContent) : '';
+  }
+
+  // ── Destino ───────────────────────────────────────────────────────
+  var dest   = d.dest || '';
   var hasDis = !!(dest.includes('Disney') || dest.includes('Ambos'));
   var hasUni = !!(dest.includes('Universal') || dest.includes('Ambos'));
-  var nDisney    = parseDias(d.diasDis);
-  var nUniversal = parseDias(d.diasUni);
-  var fInGlobal  = d.fIn  || '';
-  var fOutGlobal = d.fOut || '';
+
+  // ── Noches por destino (del formulario) ───────────────────────────
+  var nDis = parseDias(d.diasDis);   // "6 días" → 6
+  var nUni = parseDias(d.diasUni);   // "2 días" → 2
+
+  // ── Fechas globales del viaje (ISO, del formulario) ───────────────
+  var fInGlobal  = d.fIn  || '';   // ej: "2026-09-10"
+  var fOutGlobal = d.fOut || '';   // ej: "2026-09-21"
 
   // ── Fechas por segmento ───────────────────────────────────────────
-  // Prioridad: (1) DOM con id → (2) calcular desde fIn + noches
-  var disFechaIn  = parseFechaES((document.getElementById('dis-checkin')  || {}).textContent) || fInGlobal;
-  var disFechaOut = parseFechaES((document.getElementById('dis-checkout') || {}).textContent) || '';
-  var uniFechaIn  = parseFechaES((document.getElementById('uni-checkin')  || {}).textContent) || '';
-  var uniFechaOut = parseFechaES((document.getElementById('uni-checkout') || {}).textContent) || '';
+  // Prioridad 1: leer del DOM (el agente pudo haberlas editado)
+  // Prioridad 2: calcular desde fIn + noches
+  var disFIn  = leerFechaDOM('dis-checkin')  || fInGlobal;
+  var disFOut = leerFechaDOM('dis-checkout') || '';
+  var uniFIn  = leerFechaDOM('uni-checkin')  || '';
+  var uniFOut = leerFechaDOM('uni-checkout') || '';
 
-  if(!disFechaOut && disFechaIn && nDisney > 0)
-    disFechaOut = addDiasISO(disFechaIn, nDisney);
-  if(!uniFechaIn)
-    uniFechaIn = disFechaOut;
-  if(!uniFechaOut && uniFechaIn && nUniversal > 0)
-    uniFechaOut = addDiasISO(uniFechaIn, nUniversal);
+  // Calcular faltantes desde noches
+  if(!disFOut) disFOut = disFIn && nDis > 0 ? addDias(disFIn, nDis) : fOutGlobal;
+  if(!uniFIn)  uniFIn  = disFOut;
+  if(!uniFOut) uniFOut = uniFIn && nUni > 0 ? addDias(uniFIn, nUni) : '';
 
   // ── Crucero ───────────────────────────────────────────────────────
-  var crucSection  = document.getElementById('sec-crucero');
-  var tieneCrucero = !!(crucSection && crucSection.style.display !== 'none');
+  var crucSec = document.getElementById('sec-crucero');
+  var hasCruc = !!(crucSec && crucSec.style.display !== 'none');
   var crucNoches = 3;
-  var crucItinLabel = '';
-  if(tieneCrucero){
-    var crucBtn = document.querySelector('.crucero-itin-btn.active');
-    if(crucBtn){
-      var mm = crucBtn.textContent.match(/(\d+)\s*noches?/i);
+  var crucLabel  = '';
+  if(hasCruc){
+    var btn = document.querySelector('.crucero-itin-btn.active');
+    if(btn){
+      var mm = btn.textContent.match(/(\d+)\s*noches?/i);
       if(mm) crucNoches = parseInt(mm[1]);
-      crucItinLabel = crucBtn.textContent.trim();
+      crucLabel = btn.textContent.trim();
     }
   }
-  var crucFechaIn  = uniFechaOut || disFechaOut || '';
-  var crucFechaOut = crucFechaIn ? addDiasISO(crucFechaIn, crucNoches) : '';
+  var crucFIn  = uniFOut || disFOut || '';
+  var crucFOut = crucFIn ? addDias(crucFIn, crucNoches) : '';
 
-  // ── Hoteles seleccionados (primer row visible) ────────────────────
-  var hotelDisney = null;
+  // ── Hotel Disney (primer row visible) ─────────────────────────────
+  var hotelDis = null;
   ['d1','d2','d3'].forEach(function(k){
-    if(hotelDisney) return;
+    if(hotelDis) return;
     var row = document.querySelector('[data-row="'+k+'"]');
     if(!row || row.style.display==='none') return;
     var n = row.querySelector('.opt-hotel');
     var det = row.querySelector('.opt-details');
-    if(n) hotelDisney = { nombre: n.textContent.trim(), detalle: det ? det.textContent.trim() : '' };
+    if(n) hotelDis = { nombre: n.textContent.trim(), detalle: det ? det.textContent.trim() : '' };
   });
-  var hotelUniversal = null;
+
+  // ── Hotel Universal (primer row visible) ──────────────────────────
+  var hotelUni = null;
   ['u1','u2','u3'].forEach(function(k){
-    if(hotelUniversal) return;
+    if(hotelUni) return;
     var row = document.querySelector('[data-row="'+k+'"]');
     if(!row || row.style.display==='none') return;
     var n = row.querySelector('.opt-hotel');
     var det = row.querySelector('.opt-details');
-    if(n) hotelUniversal = { nombre: n.textContent.trim(), detalle: det ? det.textContent.trim() : '' };
+    if(n) hotelUni = { nombre: n.textContent.trim(), detalle: det ? det.textContent.trim() : '' };
   });
 
   // ── Parques activos ───────────────────────────────────────────────
-  var parquesDisney = [];
-  document.querySelectorAll('#disney-parks .park-card').forEach(function(card){
-    if(card.style.display === 'none') return;
-    var name = card.querySelector('.pc-name');
-    if(name) parquesDisney.push(name.textContent.trim());
+  var pDis = [], pUni = [];
+  document.querySelectorAll('#disney-parks .park-card').forEach(function(c){
+    if(c.style.display==='none') return;
+    var n = c.querySelector('.pc-name');
+    if(n) pDis.push(n.textContent.trim());
   });
-  var parquesUniversal = [];
-  document.querySelectorAll('#universal-parks .park-card').forEach(function(card){
-    if(card.style.display === 'none') return;
-    var name = card.querySelector('.pc-name');
-    if(name) parquesUniversal.push(name.textContent.trim());
+  document.querySelectorAll('#universal-parks .park-card').forEach(function(c){
+    if(c.style.display==='none') return;
+    var n = c.querySelector('.pc-name');
+    if(n) pUni.push(n.textContent.trim());
   });
 
   // ── Promos activas ────────────────────────────────────────────────
   var promos = [];
-  var secPromo = document.getElementById('sec-promo');
-  if(secPromo && secPromo.style.display !== 'none'){
-    var promoMap = {
-      'promo-dia-gratis':'🌅 Día gratis en check-in',
-      'promo-comidas':'🍽️ Descuento en plan de comidas',
-      'promo-hotel':'🏨 Descuento en alojamiento',
-      'promo-tickets':'🎟️ Descuento en tickets'
-    };
-    Object.keys(promoMap).forEach(function(id){
-      var el = document.getElementById(id);
-      if(el && el.style.display !== 'none') promos.push(promoMap[id]);
+  var secPro = document.getElementById('sec-promo');
+  if(secPro && secPro.style.display !== 'none'){
+    [{id:'promo-dia-gratis',lbl:'🌅 Día gratis en check-in'},
+     {id:'promo-comidas',   lbl:'🍽️ Descuento en plan de comidas'},
+     {id:'promo-hotel',     lbl:'🏨 Descuento en alojamiento'},
+     {id:'promo-tickets',   lbl:'🎟️ Descuento en tickets'}
+    ].forEach(function(p){
+      var el = document.getElementById(p.id);
+      if(el && el.style.display !== 'none') promos.push(p.lbl);
     });
   }
 
   // ── Nombre cliente ────────────────────────────────────────────────
-  var clienteEl = document.getElementById('hdr-cliente');
-  var nomCliente = d.nom || (clienteEl ? clienteEl.textContent.trim() : '');
+  var nomEl = document.getElementById('hdr-cliente');
+  var nombre = d.nom || (nomEl ? nomEl.textContent.trim() : '');
 
-  // ── Objeto budget final ───────────────────────────────────────────
+  // ── Objeto final ──────────────────────────────────────────────────
   return {
-    nombre:   nomCliente,
+    nombre:   nombre,
     nAdultos: parseInt(d.nAdu) || 2,
     nMenores: parseInt(d.nMen) || 0,
     edades:   d.edades || [],
@@ -2935,26 +2940,26 @@ function serializarPresupuesto(){
     fIn:      fInGlobal,
     fOut:     fOutGlobal,
     disney: hasDis ? {
-      hotelNombre:  hotelDisney ? hotelDisney.nombre  : '',
-      hotelDetalle: hotelDisney ? hotelDisney.detalle : '',
-      fIn:    disFechaIn,
-      fOut:   disFechaOut,
-      noches: nDisney,
-      parques: parquesDisney
+      hotelNombre:  hotelDis ? hotelDis.nombre  : '',
+      hotelDetalle: hotelDis ? hotelDis.detalle : '',
+      fIn:    disFIn,
+      fOut:   disFOut,
+      noches: nDis,
+      parques: pDis
     } : null,
     universal: hasUni ? {
-      hotelNombre:  hotelUniversal ? hotelUniversal.nombre  : '',
-      hotelDetalle: hotelUniversal ? hotelUniversal.detalle : '',
-      fIn:    uniFechaIn,
-      fOut:   uniFechaOut,
-      noches: nUniversal,
-      parques: parquesUniversal
+      hotelNombre:  hotelUni ? hotelUni.nombre  : '',
+      hotelDetalle: hotelUni ? hotelUni.detalle : '',
+      fIn:    uniFIn,
+      fOut:   uniFOut,
+      noches: nUni,
+      parques: pUni
     } : null,
-    crucero: tieneCrucero ? {
-      fIn:       crucFechaIn,
-      fOut:      crucFechaOut,
+    crucero: hasCruc ? {
+      fIn:       crucFIn,
+      fOut:      crucFOut,
       noches:    crucNoches,
-      itinLabel: crucItinLabel
+      itinLabel: crucLabel
     } : null,
     promos:     promos,
     extras:     Array.isArray(d.extras) ? d.extras : [],
@@ -2976,7 +2981,6 @@ function exportarPDF(){
   var btn = document.getElementById('btn-export');
   if(btn){ btn.textContent = '⏳ Preparando...'; btn.disabled = true; }
 
-  // Cargar jsPDF + html2canvas si no están cargados
   function loadScript(src, cb){
     if(document.querySelector('script[src="'+src+'"]')){ cb(); return; }
     var s = document.createElement('script');
@@ -2991,7 +2995,7 @@ function exportarPDF(){
       }, 600);
     });
   });
-
+}
 
 function _generarPDFConJsPDF(btn){
   var el = document.getElementById('pdf-summary');
