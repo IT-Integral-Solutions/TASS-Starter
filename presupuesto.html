@@ -1929,6 +1929,44 @@ document.addEventListener('DOMContentLoaded',function(){
   if(d.fOut) setByText('07 Septiembre 2026', new Date(d.fOut).toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'}));
   if(d.diasDis) setByText('4 días · base un parque/día', d.diasDis+' · base un parque/día');
 
+  // ── FECHAS POR SEGMENTO (dis-checkin, dis-checkout, uni-checkin, uni-checkout) ──
+  // Se calculan desde fIn + diasDis/diasUni y se escriben en los IDs del DOM
+  // Formato español: "06 de abril de 2026"  (es lo que textoAISO() espera al serializar)
+  if(d.fIn){
+    var _addDias = function(isoDate, n){
+      var dt = new Date(isoDate + 'T12:00:00');
+      dt.setDate(dt.getDate() + n);
+      return dt;
+    };
+    var _fmtES = function(dt){
+      return dt.toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});
+    };
+    var _parseDias = function(str){ var m=String(str||'').match(/^(\d+)/); return m?parseInt(m[1]):0; };
+
+    var _nDis = _parseDias(d.diasDis);
+    var _nUni = _parseDias(d.diasUni);
+
+    var _dtDisIn  = new Date(d.fIn + 'T12:00:00');
+    var _dtDisOut = _nDis  > 0 ? _addDias(d.fIn, _nDis)  : _dtDisIn;
+    var _dtUniIn  = _dtDisOut; // Universal arranca donde termina Disney
+    var _dtUniOut = _nUni  > 0 ? new Date(_dtUniIn.getTime()) : _dtUniIn;
+    if(_nUni > 0){ _dtUniOut = new Date(_dtUniIn.getTime()); _dtUniOut.setDate(_dtUniOut.getDate() + _nUni); }
+
+    var _elDIn  = document.getElementById('dis-checkin');
+    var _elDOut = document.getElementById('dis-checkout');
+    var _elUIn  = document.getElementById('uni-checkin');
+    var _elUOut = document.getElementById('uni-checkout');
+
+    if(hasDis){
+      if(_elDIn)  _elDIn.textContent  = _fmtES(_dtDisIn);
+      if(_elDOut) _elDOut.textContent = _fmtES(_dtDisOut);
+    }
+    if(hasUni){
+      if(_elUIn)  _elUIn.textContent  = _fmtES(_dtUniIn);
+      if(_elUOut) _elUOut.textContent = _fmtES(_dtUniOut);
+    }
+  }
+
   // ── 2. MOSTRAR/OCULTAR SECCIONES DISNEY / UNIVERSAL ──────────────────
   var disSec = document.getElementById('disney-parks');
   var disRev = document.getElementById('disney-reviews');
