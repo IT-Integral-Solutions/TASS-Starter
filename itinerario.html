@@ -426,182 +426,195 @@ function generarDias(data, p) {
   const dias = [];
   const esBudget = data._fuente === 'budget';
 
-  // ── Normalizar datos según fuente ─────────────────────────────────────────
-  let hasDis, hasUni;
-  let disNochesTotal, uniNochesTotal, crucNoches;
-  let disFechaIn, disFechaOut, uniFechaIn, uniFechaOut, crucFechaIn, crucFechaOut;
-  let tieneCrucero = false;
-  let hotelDisney = 'hotel Disney';
-  let hotelUniversal = 'hotel Universal';
-  let hotelCrucero = 'Disney Cruise Line';
-  let parquesBudgetDis = [];
-  let parquesBudgetUni = [];
+  // ── Normalizar fuente de datos ────────────────────────────────────────────
+  let hasDis = false, hasUni = false, tieneCrucero = false;
+  let disNochesTotal = 0, uniNochesTotal = 0, crucNoches = 3;
+  let disFechaIn = '', disFechaOut = '';
+  let uniFechaIn = '', uniFechaOut = '';
+  let crucFechaIn = '', crucFechaOut = '';
+  let hotelDisney = '', hotelUniversal = '';
+  let parquesBudgetDis = [], parquesBudgetUni = [];
 
   if (esBudget) {
-    // ── Fuente: presupuesto serializado ───────────────────────────────────
     hasDis = !!data.hasDis;
     hasUni = !!data.hasUni;
     tieneCrucero = !!data.crucero;
 
     if (data.disney) {
-      disFechaIn    = data.disney.fIn  || data.fIn || '';
-      disFechaOut   = data.disney.fOut || '';
-      disNochesTotal = data.disney.noches || 0;
-      hotelDisney   = nombreHotel(data.disney);
+      disFechaIn     = data.disney.fIn  || data.fIn || '';
+      disFechaOut    = data.disney.fOut || '';
+      disNochesTotal = parseInt(data.disney.noches) || 0;
+      hotelDisney    = nombreHotel(data.disney);
       parquesBudgetDis = data.disney.parques || [];
+      // Si fOut falta, calcularlo desde fIn + noches
+      if (!disFechaOut && disFechaIn && disNochesTotal > 0)
+        disFechaOut = isoDate(addDays(parseDate(disFechaIn), disNochesTotal));
     }
     if (data.universal) {
-      uniFechaIn    = data.universal.fIn  || disFechaOut || '';
-      uniFechaOut   = data.universal.fOut || '';
-      uniNochesTotal = data.universal.noches || 0;
+      uniFechaIn     = data.universal.fIn  || disFechaOut || '';
+      uniFechaOut    = data.universal.fOut || '';
+      uniNochesTotal = parseInt(data.universal.noches) || 0;
       hotelUniversal = nombreHotel(data.universal);
       parquesBudgetUni = data.universal.parques || [];
+      if (!uniFechaIn)  uniFechaIn  = disFechaOut;
+      if (!uniFechaOut && uniFechaIn && uniNochesTotal > 0)
+        uniFechaOut = isoDate(addDays(parseDate(uniFechaIn), uniNochesTotal));
     }
     if (data.crucero) {
-      crucFechaIn  = data.crucero.fIn  || uniFechaOut || '';
+      crucFechaIn  = data.crucero.fIn  || uniFechaOut || disFechaOut || '';
       crucFechaOut = data.crucero.fOut || '';
-      crucNoches   = data.crucero.noches || 3;
+      crucNoches   = parseInt(data.crucero.noches) || 3;
+      if (!crucFechaIn)  crucFechaIn  = uniFechaOut || disFechaOut;
+      if (!crucFechaOut && crucFechaIn)
+        crucFechaOut = isoDate(addDays(parseDate(crucFechaIn), crucNoches));
     }
-
-    // Fechas globales fIn/fOut del budget
     if (!disFechaIn && data.fIn) disFechaIn = data.fIn;
 
   } else {
-    // ── Fuente: formulario cliente (legacy) ───────────────────────────────
+    // legacy ?data=
     const dest = data.dest || '';
     hasDis = dest.includes('Disney') || dest.includes('Ambos');
     hasUni = dest.includes('Universal') || dest.includes('Ambos');
-    disFechaIn  = data.fIn  || '';
-    disNochesTotal = parseInt((data.diasDis || '0').replace(/\D/g,'')) || 0;
-    uniNochesTotal = parseInt((data.diasUni || '0').replace(/\D/g,'')) || 0;
-    tieneCrucero = data.crucero && data.crucero.includes('Sí');
-    crucNoches = 3;
+    disFechaIn     = data.fIn || '';
+    // "4 días" → 4
+    disNochesTotal = parseInt((data.diasDis || '').replace(/[^0-9]/g,'')) || 0;
+    uniNochesTotal = parseInt((data.diasUni || '').replace(/[^0-9]/g,'')) || 0;
+    tieneCrucero   = !!(data.crucero && data.crucero.includes('Sí'));
+    crucNoches     = 3;
 
     if (disFechaIn && disNochesTotal > 0) {
       disFechaOut = isoDate(addDays(parseDate(disFechaIn), disNochesTotal));
-      if (hasUni) {
-        uniFechaIn  = disFechaOut;
-        uniFechaOut = isoDate(addDays(parseDate(uniFechaIn), uniNochesTotal));
-      }
     } else if (data.fIn && data.fOut) {
       disFechaIn  = data.fIn;
       disFechaOut = data.fOut;
     }
-    if (tieneCrucero && (uniFechaOut || disFechaOut)) {
-      crucFechaIn  = uniFechaOut || disFechaOut;
-      crucFechaOut = isoDate(addDays(parseDate(crucFechaIn), crucNoches));
+    if (hasUni && disFechaOut) {
+      uniFechaIn  = disFechaOut;
+      if (uniNochesTotal > 0)
+        uniFechaOut = isoDate(addDays(parseDate(uniFechaIn), uniNochesTotal));
     }
+    if (tieneCrucero) {
+      crucFechaIn  = uniFechaOut || disFechaOut || '';
+      if (crucFechaIn)
+        crucFechaOut = isoDate(addDays(parseDate(crucFechaIn), crucNoches));
+    }
+    hotelDisney    = 'hotel Disney';
+    hotelUniversal = 'hotel Universal';
   }
 
-  // ── Parques configurados desde params ─────────────────────────────────────
-  const cfgDis = p.disney   || {};
+  // ── Fallback nombre hotel ──────────────────────────────────────────────────
+  if (!hotelDisney)    hotelDisney    = 'hotel Disney';
+  if (!hotelUniversal) hotelUniversal = 'hotel Universal';
+
+  // ── Parques desde params ───────────────────────────────────────────────────
+  const cfgDis = p.disney    || {};
   const cfgUni = p.universal || {};
   const parquesDisney    = hasDis ? getParquesOrdenados(cfgDis, parquesBudgetDis) : [];
   const parquesUniversal = hasUni ? getParquesOrdenados(cfgUni, parquesBudgetUni) : [];
 
-  // ── Calcular días de parque por segmento ──────────────────────────────────
-  // Disney: noches totales - 1 (llegada) - 1 (check-out/transición)
-  // Universal: noches totales - 1 (check-in, ya fue check-out Disney ese día)
-  // Crucero: noches (predefinido por días de navegación)
+  // ── Días de parque por segmento ────────────────────────────────────────────
+  // Disney:    Día 1 = llegada+checkin. Días 2..N-1 = parques/descanso. Día N = checkout/transición.
+  //            → slots de parque = nochesTotal - 1 (si hay seg siguiente) ó nochesTotal - 1 (si es el último: + día salida)
+  // Universal: El check-in ya ocurre en el día de transición (mismo día checkout Disney).
+  //            → El día siguiente al check-in = primer parque. slots = nochesTotal.
+  //            Si tiene crucero: último día Universal = transición. slots = nochesTotal - 1.
+  // Crucero:   Días predefinidos por cantidad de noches.
 
-  let diasParqueDis = 0;
-  let diasParqueUni = 0;
+  let slotsDisney    = 0;
+  let slotsUniversal = 0;
 
   if (hasDis && disNochesTotal > 0) {
-    // Día 1 = llegada+checkin, último día de Disney = check-out
-    // días de parque Disney = noches - 1 (si solo Disney) ó noches si hay más segmentos
-    diasParqueDis = Math.max(0, disNochesTotal - (hasUni || tieneCrucero ? 1 : 1));
+    // -1 siempre: porque el día de llegada no es de parque,
+    // y el último día Disney (check-out/transición) tampoco es de parque.
+    // Si es solo Disney (sin seg siguiente), ese "último día" es el de salida.
+    slotsDisney = Math.max(0, disNochesTotal - 1);
   }
   if (hasUni && uniNochesTotal > 0) {
-    // El primer día de Universal: el agente va directo al parque (check-in fue el día anterior en el check-out Disney)
-    // días de parque Universal = noches (sin día de descanso para segmentos cortos)
-    diasParqueUni = Math.max(1, uniNochesTotal - (tieneCrucero ? 0 : 0));
-    // Universal: no genera descansos (parámetro noDescanso=true para este segmento corto)
+    // El check-in Universal ocurrió en el día de transición (que es uniFechaIn).
+    // El día siguiente es el primer parque. La cuenta de parques = noches.
+    // Si hay crucero: el último día Universal = transición al crucero, no es parque.
+    slotsUniversal = tieneCrucero
+      ? Math.max(0, uniNochesTotal - 1)
+      : Math.max(1, uniNochesTotal);
   }
 
-  // Secuencias
-  const seqDis = hasDis ? generarSecuencia(parquesDisney, diasParqueDis, cfgDis.reglas, false) : [];
-  const seqUni = hasUni ? generarSecuencia(parquesUniversal, diasParqueUni, cfgUni.reglas, true) : [];
+  const seqDis = hasDis ? generarSecuencia(parquesDisney,    slotsDisney,    cfgDis.reglas, false) : [];
+  const seqUni = hasUni ? generarSecuencia(parquesUniversal, slotsUniversal, cfgUni.reglas, true)  : [];
 
-  // ── CONSTRUCCIÓN DE DÍAS POR SEGMENTO ─────────────────────────────────────
+  // ── Construcción de días usando fechas absolutas ───────────────────────────
 
-  // ─ Segmento DISNEY ──────────────────────────────────────────────────────
+  // ─ DISNEY ────────────────────────────────────────────────────────────────
   if (hasDis && disFechaIn) {
     const fInDis = parseDate(disFechaIn);
 
-    // Día 1: Llegada + Check-in Disney
-    dias.push(_diaBienvenida(fInDis, dias.length, hotelDisney, cfgDis, hasDis));
+    // Día llegada (disFechaIn)
+    dias.push(_diaBienvenida(fInDis, 0, hotelDisney, cfgDis, true));
 
-    // Días intermedios Disney (parques + descansos)
-    for (let si = 0; si < seqDis.length; si++) {
+    // Días intermedios: fInDis + 1, +2, ...
+    seqDis.forEach((item, si) => {
       const fecha = addDays(fInDis, 1 + si);
-      const item = seqDis[si];
-      if (item.tipo === 'parque') {
-        const pk = item.parque;
-        dias.push(_diaParque(fecha, dias.length, pk, 'disney', cfgDis));
-      } else {
-        dias.push(_diaDescanso(fecha, dias.length, item.actividades, cfgDis));
-      }
-    }
+      if (item.tipo === 'parque')
+        dias.push(_diaParque(fecha, 0, item.parque, 'disney', cfgDis));
+      else
+        dias.push(_diaDescanso(fecha, 0, item.actividades, cfgDis));
+    });
 
-    // Último día Disney: check-out (si hay segmento siguiente)
-    if ((hasUni || tieneCrucero) && disFechaOut) {
+    // Día checkout Disney / transición al siguiente segmento (disFechaOut)
+    if (disFechaOut) {
       const fOutDis = parseDate(disFechaOut);
-      const hotelSig = hasUni ? hotelUniversal : (tieneCrucero ? hotelCrucero : '');
-      dias.push(_diaTransicion(fOutDis, dias.length, hotelDisney, hotelSig, hasUni ? 'Universal Studios' : 'Puerto Canaveral'));
+      if (hasUni) {
+        dias.push(_diaTransicion(fOutDis, 0, hotelDisney, hotelUniversal, 'Universal Orlando'));
+      } else if (tieneCrucero) {
+        dias.push(_diaTransicion(fOutDis, 0, hotelDisney, 'Disney Cruise Line', 'Puerto Canaveral'));
+      } else {
+        // Solo Disney: día de salida
+        dias.push(_diaSalida(fOutDis, 0));
+      }
     }
   }
 
-  // ─ Segmento UNIVERSAL ──────────────────────────────────────────────────
+  // ─ UNIVERSAL ─────────────────────────────────────────────────────────────
   if (hasUni && uniFechaIn) {
+    // uniFechaIn ya fue el día de transición (check-out Disney + check-in Universal).
+    // Los parques arrancan desde uniFechaIn + 1.
     const fInUni = parseDate(uniFechaIn);
 
-    // Si hay Disney, el día de transición ya tiene check-out de Disney + check-in Universal.
-    // Entonces el primer día "real" de Universal es el siguiente.
-    // Pero si Universal es el primer destino, generar día de llegada.
     if (!hasDis) {
-      dias.push(_diaBienvenida(fInUni, dias.length, hotelUniversal, cfgUni, false));
+      // Universal como primer destino: día de llegada en uniFechaIn
+      dias.push(_diaBienvenida(fInUni, 0, hotelUniversal, cfgUni, false));
     }
-    // Días de parque Universal (sin descanso)
-    for (let si = 0; si < seqUni.length; si++) {
-      const fecha = hasDis ? addDays(fInUni, 1 + si) : addDays(fInUni, 1 + si);
-      const item = seqUni[si];
-      if (item.tipo === 'parque') {
-        const pk = item.parque;
-        dias.push(_diaParque(fecha, dias.length, pk, 'universal', cfgUni));
+    // Parques: uniFechaIn + 1, +2, ...
+    seqUni.forEach((item, si) => {
+      const fecha = addDays(fInUni, 1 + si);
+      if (item.tipo === 'parque')
+        dias.push(_diaParque(fecha, 0, item.parque, 'universal', cfgUni));
+      else
+        dias.push(_diaDescanso(fecha, 0, item.actividades, cfgUni));
+    });
+
+    // Día checkout Universal (uniFechaOut)
+    if (uniFechaOut) {
+      const fOutUni = parseDate(uniFechaOut);
+      if (tieneCrucero) {
+        dias.push(_diaTransicionCrucero(fOutUni, 0, hotelUniversal));
       } else {
-        dias.push(_diaDescanso(fecha, dias.length, item.actividades, cfgUni));
+        dias.push(_diaSalida(fOutUni, 0));
       }
     }
-
-    // Último día Universal: si hay crucero → día de transición a crucero
-    if (tieneCrucero && uniFechaOut && crucFechaIn) {
-      const fOutUni = parseDate(uniFechaOut);
-      dias.push(_diaTransicionCrucero(fOutUni, dias.length, hotelUniversal));
-    } else if (!tieneCrucero && uniFechaOut) {
-      // Último día: salida
-      dias.push(_diaSalida(parseDate(uniFechaOut), dias.length));
-    }
   }
 
-  // ─ Segmento CRUCERO ────────────────────────────────────────────────────
+  // ─ CRUCERO ───────────────────────────────────────────────────────────────
   if (tieneCrucero && crucFechaIn) {
+    // crucFechaIn = fecha del embarque (ya fue el día de _diaTransicionCrucero).
+    // Los días a bordo arrancan desde crucFechaIn + 1.
     const fInCruc = parseDate(crucFechaIn);
-    // Crucero: dias predefinidos según tipo
-    const diasCrucero = _diasCrucero(fInCruc, dias.length, crucNoches);
-    diasCrucero.forEach(d => dias.push(d));
-    // Día de salida tras crucero
-    if (crucFechaOut) {
-      dias.push(_diaSalida(parseDate(crucFechaOut), dias.length));
-    }
+    _diasCrucero(fInCruc, crucNoches).forEach(d => dias.push(d));
+    // Regreso: crucFechaOut
+    if (crucFechaOut)
+      dias.push(_diaSalida(parseDate(crucFechaOut), 0));
   }
 
-  // ─ Solo si no hay crucero ni Universal y hay Disney solo ───────────────
-  if (hasDis && !hasUni && !tieneCrucero && disFechaOut) {
-    dias.push(_diaSalida(parseDate(disFechaOut), dias.length));
-  }
-
-  // Numerar correlativamente
+  // Numerar todos correlativamente
   dias.forEach((d, i) => { d.idx = i + 1; });
   return dias;
 }
@@ -705,62 +718,99 @@ function _diaTransicionCrucero(fecha, idx, hotelSalida) {
 }
 
 // Días de crucero predefinidos según cantidad de noches
-function _diasCrucero(fInCruc, idxBase, noches) {
+// fInCruc = fecha de embarque (el día de transición ya fue generado)
+// Los días a bordo arrancan desde fInCruc + 1
+function _diasCrucero(fInCruc, noches) {
   const dias = [];
-  // El día de embarque ya fue generado en _diaTransicionCrucero
-  // Aquí generamos los días a bordo
 
-  if (noches >= 3) {
-    // Día en Nassau, Bahamas
-    const fechaNassau = addDays(fInCruc, 1);
+  // Para crucero de 3 noches: día 1 = navegación a Nassau, día 2 = Castaway Cay, día 3 = regreso (gestionado por _diaSalida)
+  // Para crucero de 4 noches: día 1 = navegación, día 2 = Nassau, día 3 = Castaway Cay, día 4 = regreso
+
+  if (noches === 3) {
+    // Día 1 a bordo: navegación y llegada a Nassau
     dias.push({
-      idx: idxBase + dias.length, fecha: fechaNassau, tipo:'crucero',
+      idx: 0, fecha: addDays(fInCruc, 1), tipo:'crucero',
       titulo:'🏝️ Nassau, Bahamas',
-      subtitulo:'Puerto Canaveral → Nassau · Día en tierra',
+      subtitulo:'Navegación · Puerto Nassau · Día en tierra',
       confirmado: false, notas:'',
       bloques:[
-        {icono:'🌊', hora:'06:00', periodo:'Mañana temprano', label:'Llegada a Nassau', texto:'El barco arriba a Nassau, Bahamas. Desayuno a bordo mientras el crucero ingresa al puerto.'},
-        {icono:'⚓', hora:'08:00', periodo:'Mañana', label:'Desembarco en Nassau', texto:'Desembarco en el puerto Nassau. Horario de regreso al barco informado por la naviera (generalmente 18:00 hs, sujeto a autoridades portuarias).'},
-        {icono:'🏖️', hora:'09:00', periodo:'Mañana / Tarde', label:'Nassau libre', texto:'Nassau libre: Paradise Island, Atlantis, playas, mercado de artesanías, tiendas duty-free. A elección del grupo.'},
-        {icono:'🚢', hora:'18:00', periodo:'Tarde', label:'Regreso al barco', texto:'Regreso al barco antes del horario indicado por la naviera. Zarpe hacia el próximo destino.'},
-        {icono:'🍽️', hora:'20:00', periodo:'Noche', label:'Cena a bordo', texto:'Cena en restaurante rotativo Disney. Espectáculo nocturno en el teatro del crucero.'},
+        {icono:'🌊', hora:'06:00', periodo:'Mañana temprano', label:'Llegada a Nassau', texto:'El barco arriba a Nassau, Bahamas. Desayuno a bordo mientras ingresa al puerto.'},
+        {icono:'⚓', hora:'08:00', periodo:'Mañana', label:'Desembarco en Nassau', texto:'Desembarco en el puerto de Nassau. Horario de regreso informado por la naviera (generalmente 18:00 hs, sujeto a autoridades portuarias).'},
+        {icono:'🏖️', hora:'09:00', periodo:'Mañana / Tarde', label:'Nassau libre', texto:'Nassau libre: Paradise Island, Atlantis, playas, artesanías, tiendas duty-free. A elección del grupo.'},
+        {icono:'🚢', hora:'18:00', periodo:'Tarde', label:'Regreso al barco', texto:'Regreso al barco antes del horario indicado. Zarpe hacia Castaway Cay.'},
+        {icono:'🍽️', hora:'20:00', periodo:'Noche', label:'Cena a bordo', texto:'Cena en restaurante rotativo Disney. Espectáculo nocturno en el teatro.'},
       ]
     });
-  }
-
-  if (noches >= 3) {
-    // Día en Castaway Cay (isla privada Disney)
-    const fechaCastaway = addDays(fInCruc, 2);
+    // Día 2 a bordo: Castaway Cay
     dias.push({
-      idx: idxBase + dias.length, fecha: fechaCastaway, tipo:'crucero',
+      idx: 0, fecha: addDays(fInCruc, 2), tipo:'crucero',
       titulo:'🏖️ Castaway Cay',
-      subtitulo:'Isla privada de Disney · Bahamas',
+      subtitulo:'Isla privada Disney · Bahamas',
       confirmado: false, notas:'',
       bloques:[
-        {icono:'🌅', hora:'07:00', periodo:'Mañana', label:'Amanecer en Castaway Cay', texto:'El barco arriba a Castaway Cay, isla privada de Disney en Bahamas. Desayuno a bordo.'},
-        {icono:'🏖️', hora:'08:30', periodo:'Mañana', label:'Playa privada Disney', texto:'Acceso a la playa privada de Disney. Tumbonas, sombrillas, snorkeling, kayaks y deportes acuáticos incluidos.'},
-        {icono:'🍔', hora:'12:00', periodo:'Mediodía', label:'Almuerzo en la playa', texto:'BBQ en la playa Castaway Cay incluido en el paquete. Menú familiar.'},
-        {icono:'🌊', hora:'14:00', periodo:'Tarde', label:'Tarde en la isla', texto:'Tarde libre en la isla. Actividades acuáticas, paseos en bicicleta o simplemente descansar en la playa.'},
-        {icono:'⚓', hora:'17:00', periodo:'Tarde', label:'Regreso al barco', texto:'Regreso al crucero. Zarpe hacia Puerto Canaveral para el último día de navegación.'},
-        {icono:'🎉', hora:'20:00', periodo:'Noche', label:'Última noche a bordo', texto:'Última cena a bordo. Espectáculo final y festejo de despedida en el crucero.'},
+        {icono:'🌅', hora:'07:00', periodo:'Mañana', label:'Llegada a Castaway Cay', texto:'El barco arriba a Castaway Cay, la isla privada de Disney en Bahamas. Desayuno a bordo.'},
+        {icono:'🏖️', hora:'08:30', periodo:'Mañana', label:'Playa privada Disney', texto:'Acceso a la playa privada. Tumbonas, sombrillas, snorkeling, kayaks y deportes acuáticos incluidos.'},
+        {icono:'🍔', hora:'12:00', periodo:'Mediodía', label:'BBQ en la playa', texto:'Almuerzo BBQ en la playa, incluido en el paquete. Menú familiar.'},
+        {icono:'🌊', hora:'14:00', periodo:'Tarde', label:'Tarde en la isla', texto:'Tarde libre: deportes acuáticos, bicicletas o simplemente descansar en la playa.'},
+        {icono:'⚓', hora:'17:00', periodo:'Tarde', label:'Regreso al barco', texto:'Zarpe de regreso hacia Puerto Canaveral. Última noche de navegación.'},
+        {icono:'🎉', hora:'20:00', periodo:'Noche', label:'Última noche a bordo', texto:'Última cena en restaurante rotativo. Show de despedida en el teatro del crucero.'},
       ]
     });
-  }
-
-  // Si tiene más noches, agregar día de navegación extra
-  if (noches >= 4) {
-    for (let n = 3; n < noches; n++) {
-      const fechaNav = addDays(fInCruc, n);
+  } else if (noches === 4) {
+    // Día 1: navegación pura
+    dias.push({
+      idx: 0, fecha: addDays(fInCruc, 1), tipo:'crucero',
+      titulo:'🌊 Día de navegación',
+      subtitulo:'A bordo · Disney Cruise Line',
+      confirmado: false, notas:'',
+      bloques:[
+        {icono:'🌅', hora:'08:00', periodo:'Mañana', label:'Desayuno a bordo', texto:'Primer amanecer en el mar. Desayuno en buffet o restaurante principal.'},
+        {icono:'🎭', hora:'10:00', periodo:'Mañana / Tarde', label:'Actividades a bordo', texto:'Pool deck, shows, spa, personajes Disney, actividades para niños. El barco es el destino.'},
+        {icono:'🍽️', hora:'13:00', periodo:'Mediodía', label:'Almuerzo', texto:'Almuerzo en restaurante o buffet.'},
+        {icono:'🌙', hora:'20:00', periodo:'Noche', label:'Cena y show', texto:'Cena en restaurante rotativo. Espectáculo en el teatro del crucero.'},
+      ]
+    });
+    // Día 2: Nassau
+    dias.push({
+      idx: 0, fecha: addDays(fInCruc, 2), tipo:'crucero',
+      titulo:'🏝️ Nassau, Bahamas',
+      subtitulo:'Puerto Nassau · Día en tierra',
+      confirmado: false, notas:'',
+      bloques:[
+        {icono:'🌊', hora:'06:00', periodo:'Mañana', label:'Llegada a Nassau', texto:'Arribo a Nassau. Desayuno a bordo mientras ingresa al puerto.'},
+        {icono:'⚓', hora:'08:00', periodo:'Mañana', label:'Desembarco', texto:'Desembarco en Nassau. Regreso al barco según horario de la naviera (aprox. 18:00 hs).'},
+        {icono:'🏖️', hora:'09:00', periodo:'Mañana / Tarde', label:'Nassau libre', texto:'Paradise Island, Atlantis, playas, mercado de artesanías, tiendas duty-free.'},
+        {icono:'🚢', hora:'18:00', periodo:'Tarde', label:'Regreso al barco', texto:'Zarpe hacia Castaway Cay.'},
+        {icono:'🍽️', hora:'20:00', periodo:'Noche', label:'Cena a bordo', texto:'Cena en restaurante rotativo Disney.'},
+      ]
+    });
+    // Día 3: Castaway Cay
+    dias.push({
+      idx: 0, fecha: addDays(fInCruc, 3), tipo:'crucero',
+      titulo:'🏖️ Castaway Cay',
+      subtitulo:'Isla privada Disney · Bahamas',
+      confirmado: false, notas:'',
+      bloques:[
+        {icono:'🌅', hora:'07:00', periodo:'Mañana', label:'Castaway Cay', texto:'Arribo a la isla privada de Disney. Desayuno a bordo.'},
+        {icono:'🏖️', hora:'08:30', periodo:'Mañana', label:'Playa privada', texto:'Playa privada: snorkeling, kayaks, tumbonas. Todo incluido.'},
+        {icono:'🍔', hora:'12:00', periodo:'Mediodía', label:'BBQ en la playa', texto:'Almuerzo BBQ incluido en el paquete.'},
+        {icono:'⚓', hora:'17:00', periodo:'Tarde', label:'Regreso al barco', texto:'Zarpe de regreso a Puerto Canaveral.'},
+        {icono:'🎉', hora:'20:00', periodo:'Noche', label:'Última noche', texto:'Cena de despedida y show final en el teatro.'},
+      ]
+    });
+  } else {
+    // Noches distintas: generar días genéricos de navegación
+    for (let n = 1; n < noches; n++) {
       dias.push({
-        idx: idxBase + dias.length, fecha: fechaNav, tipo:'crucero',
-        titulo:'🌊 Día de navegación',
+        idx: 0, fecha: addDays(fInCruc, n), tipo:'crucero',
+        titulo: n === noches - 1 ? '🏝️ Parada en destino' : '🌊 Día de navegación',
         subtitulo:'A bordo · Disney Cruise Line',
         confirmado: false, notas:'',
         bloques:[
-          {icono:'🌅', hora:'08:00', periodo:'Mañana', label:'Desayuno a bordo', texto:'Desayuno en buffet o restaurante. Mañana relajada en el barco.'},
-          {icono:'🎭', hora:'10:00', periodo:'Mañana / Tarde', label:'Actividades a bordo', texto:'Día completo a bordo: pool deck, shows, spa, juegos, personajes Disney y actividades para niños.'},
-          {icono:'🍽️', hora:'13:00', periodo:'Mediodía', label:'Almuerzo', texto:'Almuerzo en restaurante o buffet del barco.'},
-          {icono:'🌙', hora:'20:00', periodo:'Noche', label:'Cena y show final', texto:'Cena en restaurante rotativo. Show de Broadway Disney en el teatro del crucero.'},
+          {icono:'🌅', hora:'08:00', periodo:'Mañana', label:'Desayuno a bordo', texto:'Desayuno en el restaurante del crucero.'},
+          {icono:'🎭', hora:'10:00', periodo:'Mañana / Tarde', label:'Actividades', texto:'Actividades a bordo: pool deck, shows, spa, personajes Disney.'},
+          {icono:'🍽️', hora:'13:00', periodo:'Mediodía', label:'Almuerzo', texto:'Almuerzo en restaurante o buffet.'},
+          {icono:'🌙', hora:'20:00', periodo:'Noche', label:'Cena y show', texto:'Cena en restaurante rotativo y show nocturno.'},
         ]
       });
     }
