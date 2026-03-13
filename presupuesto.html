@@ -1324,8 +1324,9 @@ body.edit-on .price-edit-panel{display:flex;flex-wrap:wrap;align-items:center;}
 
 /* Sección del resumen */
 .pdf-section{
-  margin-bottom:28px;
+  margin-bottom:18px;
   break-inside:avoid;
+  page-break-inside:avoid;
 }
 .pdf-section-title{
   font-family:'Playfair Display',serif;
@@ -1349,35 +1350,38 @@ body.edit-on .price-edit-panel{display:flex;flex-wrap:wrap;align-items:center;}
 .pdf-parks-grid{
   display:grid;
   grid-template-columns:1fr 1fr;
-  gap:10px;
+  gap:8px;
+  break-inside:avoid;
+  page-break-inside:avoid;
 }
 .pdf-park-card{
   border-radius:10px;
   overflow:hidden;
   border:1.5px solid #F2D4DC;
   break-inside:avoid;
+  page-break-inside:avoid;
 }
 .pdf-park-img{
   width:100%;
-  height:90px;
+  height:70px;
   background-size:cover;
   background-position:center;
   display:block;
 }
 .pdf-park-info{
-  padding:8px 10px;
+  padding:6px 8px;
 }
 .pdf-park-name{
   font-family:'Playfair Display',serif;
-  font-size:12px;
+  font-size:11px;
   font-weight:700;
   color:#1A0A2E;
-  margin-bottom:3px;
+  margin-bottom:2px;
 }
 .pdf-park-desc{
-  font-size:9.5px;
+  font-size:9px;
   color:#666;
-  line-height:1.5;
+  line-height:1.45;
 }
 
 /* Hotel card */
@@ -2393,8 +2397,11 @@ function buildPDFSummary(){
     html += '<div class="st-icon" style="background:#FBF0F3;border:1.5px solid #F2D4DC;">🏰</div>';
     html += 'Parques Walt Disney World incluidos</div>';
     html += '<div class="pdf-parks-grid">';
-    disneyParques.forEach(function(p){
-      html += '<div class="pdf-park-card">';
+    disneyParques.forEach(function(p, pi){
+      var isLast = pi === disneyParques.length - 1;
+      var isOdd  = disneyParques.length % 2 !== 0;
+      var fullW  = isLast && isOdd ? ' style="grid-column:1/-1;max-width:50%;"' : '';
+      html += '<div class="pdf-park-card"'+fullW+'>';
       if(p.img) html += '<div class="pdf-park-img" style="background-image:url(\'' + p.img + '\');"></div>';
       html += '<div class="pdf-park-info">';
       html += '<div class="pdf-park-name">'+p.name+'</div>';
@@ -2436,8 +2443,11 @@ function buildPDFSummary(){
     html += '<div class="st-icon" style="background:#EEF4FF;border:1.5px solid #C0D8F0;">🌐</div>';
     html += 'Parques Universal Orlando incluidos</div>';
     html += '<div class="pdf-parks-grid">';
-    uniParques.forEach(function(p){
-      html += '<div class="pdf-park-card" style="border-color:#C0D8F0;">';
+    uniParques.forEach(function(p, pi){
+      var isLast = pi === uniParques.length - 1;
+      var isOdd  = uniParques.length % 2 !== 0;
+      var fullW  = isLast && isOdd ? ' style="grid-column:1/-1;max-width:50%;"' : '';
+      html += '<div class="pdf-park-card" style="border-color:#C0D8F0;"'+fullW+'>';
       if(p.img) html += '<div class="pdf-park-img" style="background-image:url(\'' + p.img + '\');"></div>';
       html += '<div class="pdf-park-info">';
       html += '<div class="pdf-park-name">'+p.name+'</div>';
@@ -3050,156 +3060,89 @@ function _generarPDFConJsPDF(btn){
   var el = document.getElementById('pdf-summary');
   if(!el){ if(btn){btn.textContent='🖨️ Exportar PDF';btn.disabled=false;} return; }
 
-  var RENDER_W = 800; // px — debe coincidir con max-width de #pdf-summary
-
   // Mostrar temporalmente para captura
   var prevDisplay = el.style.display;
-  el.style.display    = 'block';
-  el.style.position   = 'fixed';
-  el.style.top        = '-9999px';
-  el.style.left       = '0';
-  el.style.width      = RENDER_W + 'px';
-  el.style.maxWidth   = RENDER_W + 'px';
-  el.style.zIndex     = '-1';
+  el.style.display = 'block';
+  el.style.position = 'fixed';
+  el.style.top = '-9999px';
+  el.style.left = '0';
+  el.style.width = '900px';
+  el.style.zIndex = '-1';
 
+  // Esperar fuentes y layout
   setTimeout(function(){
     html2canvas(el, {
       scale: 2,
       useCORS: true,
       allowTaint: true,
       backgroundColor: '#ffffff',
-      width: RENDER_W,
-      windowWidth: RENDER_W,
+      width: 900,
+      windowWidth: 900,
       logging: false
     }).then(function(canvas){
-
-      // Restaurar DOM
-      el.style.display  = prevDisplay;
+      // Restaurar estado original
+      el.style.display = prevDisplay;
       el.style.position = '';
-      el.style.top      = '';
-      el.style.left     = '';
-      el.style.width    = '';
-      el.style.maxWidth = '';
-      el.style.zIndex   = '';
+      el.style.top = '';
+      el.style.left = '';
+      el.style.width = '';
+      el.style.zIndex = '';
 
       var { jsPDF } = window.jspdf;
+      var pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
 
-      // ── Constantes A4 en pt ──────────────────────────────────────────
-      var PAGE_W_PT  = 595.28;
-      var PAGE_H_PT  = 841.89;
-      var MARGIN_PT  = 20;
-      var PRINT_W_PT = PAGE_W_PT - MARGIN_PT * 2;   // 555.28 pt
-      var PAGE_CONTENT_H_PT = PAGE_H_PT - MARGIN_PT * 2;  // 801.89 pt
+      var pageW = pdf.internal.pageSize.getWidth();   // 210mm
+      var pageH = pdf.internal.pageSize.getHeight();  // 297mm
+      var margin = 10; // mm
+      var printW = pageW - margin * 2;
 
-      var canvasW = canvas.width;   // RENDER_W * scale (1600px)
-      var canvasH = canvas.height;
+      var imgW = canvas.width;
+      var imgH = canvas.height;
+      var ratio = printW / (imgW * 0.264583); // px → mm (96dpi → mm)
+      var totalH = imgH * 0.264583 * ratio;   // alto total en mm
 
-      // Ratio: cuántos px del canvas caben en 1 pt del PDF
-      var pxPerPt = canvasW / PRINT_W_PT;
-
-      // Alto total del documento en pt
-      var totalDocH_pt = canvasH / pxPerPt;
-      var numPages = Math.ceil(totalDocH_pt / PAGE_CONTENT_H_PT);
-
-      // ── Smart cut: buscar la fila más blanca cerca del corte ─────────
-      function getPixelBrightness(imageData, y){
-        // Promedio de luminancia de una fila horizontal
-        var data  = imageData.data;
-        var width = imageData.width;
-        var sum   = 0;
-        for(var x = 0; x < width; x++){
-          var i = (y * width + x) * 4;
-          // Luminancia perceptual
-          sum += 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2];
-        }
-        return sum / width; // 0=negro, 255=blanco
-      }
-
-      function getBestCutY_px(nominalY_px, windowPt){
-        // Busca la fila más blanca en ±windowPt alrededor del corte nominal
-        var halfWin = Math.round(windowPt * pxPerPt);
-        var yMin = Math.max(0, Math.round(nominalY_px) - halfWin);
-        var yMax = Math.min(canvasH - 1, Math.round(nominalY_px) + halfWin);
-        if(yMin >= yMax) return Math.round(nominalY_px);
-
-        // Leer franja completa de una vez (eficiente)
-        var strip = canvas.getContext('2d')
-          .getImageData(0, yMin, canvasW, yMax - yMin);
-
-        var bestY     = Math.round(nominalY_px);
-        var bestScore = -1;
-        for(var row = 0; row < (yMax - yMin); row++){
-          var score = getPixelBrightness(strip, row);
-          if(score > bestScore){
-            bestScore = score;
-            bestY     = yMin + row;
-          }
-        }
-        return bestY;
-      }
-
-      // ── Calcular puntos de corte óptimos ────────────────────────────
-      var cutPoints_px = [0]; // inicio
-      for(var p = 1; p < numPages; p++){
-        var nominalY_px = p * PAGE_CONTENT_H_PT * pxPerPt;
-        var bestY_px    = getBestCutY_px(nominalY_px, 30);
-        cutPoints_px.push(bestY_px);
-      }
-      cutPoints_px.push(canvasH); // fin
-
-      // ── Generar PDF ──────────────────────────────────────────────────
-      var pdf = new jsPDF({ orientation:'portrait', unit:'pt', format:'a4' });
+      var pageContentH = pageH - margin * 2;
+      var numPages = Math.ceil(totalH / pageContentH);
 
       for(var i = 0; i < numPages; i++){
         if(i > 0) pdf.addPage();
 
-        var srcY_px = cutPoints_px[i];
-        var srcH_px = cutPoints_px[i + 1] - srcY_px;
-        if(srcH_px <= 0) continue;
+        var srcY = i * pageContentH / ratio / 0.264583; // en px
+        var srcH = pageContentH / ratio / 0.264583;
 
-        // Canvas de la franja
-        var pageCanvas    = document.createElement('canvas');
-        pageCanvas.width  = canvasW;
-        pageCanvas.height = srcH_px;
+        // Crear canvas de la franja de esta página
+        var pageCanvas = document.createElement('canvas');
+        pageCanvas.width = imgW;
+        pageCanvas.height = Math.min(srcH, imgH - srcY);
         var ctx = pageCanvas.getContext('2d');
         ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, canvasW, srcH_px);
-        ctx.drawImage(canvas,
-          0, srcY_px, canvasW, srcH_px,
-          0, 0,       canvasW, srcH_px
-        );
+        ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+        ctx.drawImage(canvas, 0, srcY, imgW, pageCanvas.height, 0, 0, imgW, pageCanvas.height);
 
-        var imgData   = pageCanvas.toDataURL('image/jpeg', 0.95);
-        var sliceH_pt = srcH_px / pxPerPt;
-
-        pdf.addImage(imgData, 'JPEG',
-          MARGIN_PT, MARGIN_PT,
-          PRINT_W_PT, sliceH_pt
-        );
+        var imgData = pageCanvas.toDataURL('image/jpeg', 0.95);
+        var sliceH = pageCanvas.height * 0.264583 * ratio;
+        pdf.addImage(imgData, 'JPEG', margin, margin, printW, sliceH);
       }
 
-      // ── Guardar ──────────────────────────────────────────────────────
+      // Nombre del archivo
       var clienteEl = document.getElementById('hdr-cliente');
-      var apellido  = clienteEl
-        ? clienteEl.textContent.trim().replace(/^Familia\s*/i,'').replace(/\s+/g,'_')
-        : 'Cliente';
-      pdf.save('Presupuesto_ConMagui_' + apellido + '.pdf');
+      var apellido = clienteEl ? clienteEl.textContent.trim().replace(/^Familia\s*/i,'').replace(/\s+/g,'_') : 'Cliente';
+      var filename = 'Presupuesto_ConMagui_' + apellido + '.pdf';
+      pdf.save(filename);
 
       if(btn){ btn.textContent = '🖨️ Exportar PDF'; btn.disabled = false; }
-
     }).catch(function(err){
       console.error('Error generando PDF:', err);
-      el.style.display  = prevDisplay;
+      el.style.display = prevDisplay;
       el.style.position = '';
-      el.style.top      = '';
-      el.style.left     = '';
-      el.style.width    = '';
-      el.style.maxWidth = '';
-      el.style.zIndex   = '';
+      el.style.top = '';
+      el.style.left = '';
+      el.style.width = '';
+      el.style.zIndex = '';
       if(btn){ btn.textContent = '🖨️ Exportar PDF'; btn.disabled = false; }
       alert('Error al generar el PDF. Intentá de nuevo.');
     });
-  }, 400);
+  }, 300);
 }
 </script>
 <footer style="background:#0B1628;padding:28px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-top:40px;print-color-adjust:exact;-webkit-print-color-adjust:exact;">
