@@ -319,7 +319,7 @@ body.edit-on .price-edit-panel{display:flex;flex-wrap:wrap;align-items:center;}
     display:block!important;
     position:static!important;
     width:100%!important;
-    max-width:960px!important;
+    max-width:800px!important;
     margin:0 auto!important;
     padding:20px 30px!important;
   }
@@ -458,8 +458,8 @@ body.edit-on .price-edit-panel{display:flex;flex-wrap:wrap;align-items:center;}
     <span class="ph-sub">Orlando, Florida</span>
   </div>
   <div class="park-dates" style="border-color:var(--rose-p);">
-    <div class="pd-item"><div class="pd-lbl">Check In</div><div class="pd-val" data-editable id="dis-checkin">01 Septiembre 2026</div></div>
-    <div class="pd-item"><div class="pd-lbl">Check Out</div><div class="pd-val" data-editable id="dis-checkout">07 Septiembre 2026</div></div>
+    <div class="pd-item"><div class="pd-lbl">Check In</div><div class="pd-val" data-editable>01 Septiembre 2026</div></div>
+    <div class="pd-item"><div class="pd-lbl">Check Out</div><div class="pd-val" data-editable>07 Septiembre 2026</div></div>
     <div class="pd-item"><div class="pd-lbl">Tickets</div><div class="pd-val" data-editable>4 días · base un parque/día</div></div>
   </div>
   <div style="border-bottom:1.5px solid var(--rose-p);">
@@ -646,8 +646,8 @@ body.edit-on .price-edit-panel{display:flex;flex-wrap:wrap;align-items:center;}
     <span class="ph-sub">Epic Universe · Islands · Studios</span>
   </div>
   <div class="park-dates" style="border-color:var(--blue-b);">
-    <div class="pd-item"><div class="pd-lbl">Check In</div><div class="pd-val" data-editable id="uni-checkin">07 Septiembre 2026</div></div>
-    <div class="pd-item"><div class="pd-lbl">Check Out</div><div class="pd-val" data-editable id="uni-checkout">11 Septiembre 2026</div></div>
+    <div class="pd-item"><div class="pd-lbl">Check In</div><div class="pd-val" data-editable>07 Septiembre 2026</div></div>
+    <div class="pd-item"><div class="pd-lbl">Check Out</div><div class="pd-val" data-editable>11 Septiembre 2026</div></div>
     <div class="pd-item"><div class="pd-lbl">Tickets</div><div class="pd-val" data-editable>3 días Park to Park · 3 parques</div></div>
   </div>
   <div style="border-bottom:1.5px solid var(--blue-b);">
@@ -1315,7 +1315,7 @@ body.edit-on .price-edit-panel{display:flex;flex-wrap:wrap;align-items:center;}
 /* ─── ESTILOS DEL PDF SUMMARY ─────────────────── */
 #pdf-summary{
   font-family:'Montserrat',sans-serif;
-  width:800px;
+  width:100%;
   max-width:800px;
   margin:0 auto;
   background:white;
@@ -1928,44 +1928,6 @@ document.addEventListener('DOMContentLoaded',function(){
   if(d.fIn) setByText('01 Septiembre 2026', new Date(d.fIn).toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'}));
   if(d.fOut) setByText('07 Septiembre 2026', new Date(d.fOut).toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'}));
   if(d.diasDis) setByText('4 días · base un parque/día', d.diasDis+' · base un parque/día');
-
-  // ── FECHAS POR SEGMENTO (dis-checkin, dis-checkout, uni-checkin, uni-checkout) ──
-  // Se calculan desde fIn + diasDis/diasUni y se escriben en los IDs del DOM
-  // Formato español: "06 de abril de 2026"  (es lo que textoAISO() espera al serializar)
-  if(d.fIn){
-    var _addDias = function(isoDate, n){
-      var dt = new Date(isoDate + 'T12:00:00');
-      dt.setDate(dt.getDate() + n);
-      return dt;
-    };
-    var _fmtES = function(dt){
-      return dt.toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});
-    };
-    var _parseDias = function(str){ var m=String(str||'').match(/^(\d+)/); return m?parseInt(m[1]):0; };
-
-    var _nDis = _parseDias(d.diasDis);
-    var _nUni = _parseDias(d.diasUni);
-
-    var _dtDisIn  = new Date(d.fIn + 'T12:00:00');
-    var _dtDisOut = _nDis  > 0 ? _addDias(d.fIn, _nDis)  : _dtDisIn;
-    var _dtUniIn  = _dtDisOut; // Universal arranca donde termina Disney
-    var _dtUniOut = _nUni  > 0 ? new Date(_dtUniIn.getTime()) : _dtUniIn;
-    if(_nUni > 0){ _dtUniOut = new Date(_dtUniIn.getTime()); _dtUniOut.setDate(_dtUniOut.getDate() + _nUni); }
-
-    var _elDIn  = document.getElementById('dis-checkin');
-    var _elDOut = document.getElementById('dis-checkout');
-    var _elUIn  = document.getElementById('uni-checkin');
-    var _elUOut = document.getElementById('uni-checkout');
-
-    if(hasDis){
-      if(_elDIn)  _elDIn.textContent  = _fmtES(_dtDisIn);
-      if(_elDOut) _elDOut.textContent = _fmtES(_dtDisOut);
-    }
-    if(hasUni){
-      if(_elUIn)  _elUIn.textContent  = _fmtES(_dtUniIn);
-      if(_elUOut) _elUOut.textContent = _fmtES(_dtUniOut);
-    }
-  }
 
   // ── 2. MOSTRAR/OCULTAR SECCIONES DISNEY / UNIVERSAL ──────────────────
   var disSec = document.getElementById('disney-parks');
@@ -2721,16 +2683,9 @@ function buildPDFSummary(){
 
     html += '</div>';
   } else if(_saldo > 0) {
-    var _tieneFlecha = (typeof _fechaViaje !== 'undefined' && _fechaViaje);
-    var _msgCuota = _tieneFlecha
-      ? '📅 El viaje está muy próximo. El saldo de USD $'+_saldo.toFixed(0)
-        +' lo abonás en una sola vez antes del check-in. '
-        +'<strong style="color:#FFE080;">¡Hablame y coordinamos la forma de pago!</strong>'
-      : '📅 El saldo de USD $'+_saldo.toFixed(0)+' lo pagás en cómodas cuotas mensuales '
-        +'hasta '+_limiteLabel+' del check-in. Sin intereses. '
-        +'<strong style="color:#FFE080;">¡Consultame cuánto pagarías por mes!</strong>';
+    // Hay saldo pero no fecha → mensaje genérico
     html += '<div style="background:rgba(255,255,255,.10);border-radius:10px;padding:10px 14px;font-size:9.5px;opacity:.85;">';
-    html += _msgCuota;
+    html += '📅 El saldo de USD $'+_saldo.toFixed(0)+' lo pagás en cómodas cuotas mensuales hasta '+_limiteLabel+' del check-in. Sin intereses. <strong style="color:#FFE080;">¡Consultame cuánto pagarías por mes!</strong>';
     html += '</div>';
   }
 
@@ -2885,69 +2840,51 @@ function serializarPresupuesto(){
     }
   });
 
-  // ── Helpers para fechas y noches ────────────────────────────────────
-  // parseDiasN: "5 días" → 5  (parseInt("5 días") falla → NaN → 0)
-  function parseDiasN(str){ var m=String(str||'').match(/^(\d+)/); return m?parseInt(m[1]):0; }
-  // addDiasISO: "2026-04-06" + 5 → "2026-04-11"
-  function addDiasISO(iso, n){
-    if(!iso) return '';
-    var dt=new Date(iso+'T12:00:00'); dt.setDate(dt.getDate()+n);
-    return dt.toISOString().slice(0,10);
+  // ── Fechas por segmento ─────────────────────────────────────────────
+  // Disney: fIn → fOutDis, Universal: fOutDis → fOutUni, Crucero: fOutUni → fFin
+  var fIn     = d.fIn  || '';
+  var fOut    = d.fOut || '';
+  var hasDis  = d.dest && (d.dest.includes('Disney') || d.dest.includes('Ambos'));
+  var hasUni  = d.dest && (d.dest.includes('Universal') || d.dest.includes('Ambos'));
+
+  // Leer fechas editables de las cajas Disney/Universal en el presupuesto
+  var disFechaIn  = fIn;
+  var disFechaOut = '';
+  var uniFechaIn  = '';
+  var uniFechaOut = '';
+
+  // Intentar leer desde .park-dates del presupuesto si existen
+  var disBox = document.getElementById('disney-parks');
+  var uniBox = document.getElementById('universal-parks');
+  if(disBox){
+    var pdVals = disBox.querySelectorAll('.pd-val');
+    if(pdVals[0]) disFechaIn  = pdVals[0].textContent.trim() || disFechaIn;
+    if(pdVals[1]) disFechaOut = pdVals[1].textContent.trim();
   }
-  // textoAISO: "06 de abril de 2026" → "2026-04-06"  (o devuelve ISO directo)
-  var _MESES={'enero':1,'febrero':2,'marzo':3,'abril':4,'mayo':5,'junio':6,
-    'julio':7,'agosto':8,'septiembre':9,'octubre':10,'noviembre':11,'diciembre':12};
-  function textoAISO(txt){
-    txt=String(txt||'').trim();
-    if(/^\d{4}-\d{2}-\d{2}$/.test(txt)) return txt;
-    var t=txt.toLowerCase()
-      .replace(/[áa]/g,'a').replace(/[é]/g,'e').replace(/[í]/g,'i')
-      .replace(/[ó]/g,'o').replace(/[úü]/g,'u');
-    var m=t.match(/(\d{1,2})\s+de\s+([a-z]+)\s+de\s+(\d{4})/)
-       || t.match(/(\d{1,2})\s+([a-z]+)\s+(\d{4})/);
-    if(m && _MESES[m[2]])
-      return m[3]+'-'+('0'+_MESES[m[2]]).slice(-2)+'-'+('0'+parseInt(m[1])).slice(-2);
-    return '';
+  if(uniBox){
+    var pdValsU = uniBox.querySelectorAll('.pd-val');
+    if(pdValsU[0]) uniFechaIn  = pdValsU[0].textContent.trim();
+    if(pdValsU[1]) uniFechaOut = pdValsU[1].textContent.trim();
   }
 
-  // ── Destino y fechas globales ────────────────────────────────────────
-  var fIn  = d.fIn  || '';
-  var fOut = d.fOut || '';
+  // Calcular noches Disney y Universal desde diasDis/diasUni del formulario
+  var nDisney    = parseInt(d.diasDis) || 0;
+  var nUniversal = parseInt(d.diasUni) || 0;
 
-  // hasDis / hasUni: mirar qué secciones están visibles en el DOM
-  // (más confiable que d.dest que puede venir vacío o con variantes de texto)
-  var _secDis = document.getElementById('disney-parks');
-  var _secUni = document.getElementById('universal-parks');
-  var hasDis = _secDis
-    ? _secDis.style.display !== 'none'
-    : !!(d.dest && (d.dest.includes('Disney') || d.dest.includes('Ambos')));
-  var hasUni = _secUni
-    ? _secUni.style.display !== 'none'
-    : !!(d.dest && (d.dest.includes('Universal') || d.dest.includes('Ambos')));
-
-  // ── Noches por segmento ─────────────────────────────────────────────
-  var nDisney    = parseDiasN(d.diasDis);   // "5 días" → 5
-  var nUniversal = parseDiasN(d.diasUni);   // "4 días" → 4
-
-  // ── Fechas por segmento — leer del DOM (IDs), convertir a ISO ───────
-  // Los pd-val muestran texto español; textoAISO() lo convierte a YYYY-MM-DD
-  var elDIn  = document.getElementById('dis-checkin');
-  var elDOut = document.getElementById('dis-checkout');
-  var elUIn  = document.getElementById('uni-checkin');
-  var elUOut = document.getElementById('uni-checkout');
-
-  var disFechaIn  = textoAISO(elDIn  ? elDIn.textContent  : '') || fIn;
-  var disFechaOut = textoAISO(elDOut ? elDOut.textContent : '');
-  var uniFechaIn  = textoAISO(elUIn  ? elUIn.textContent  : '');
-  var uniFechaOut = textoAISO(elUOut ? elUOut.textContent : '');
-
-  // Calcular faltantes desde noches si los IDs no existían o estaban vacíos
-  if(!disFechaOut && disFechaIn && nDisney > 0)
-    disFechaOut = addDiasISO(disFechaIn, nDisney);
-  if(!uniFechaIn  && disFechaOut)
-    uniFechaIn  = disFechaOut;
-  if(!uniFechaOut && uniFechaIn && nUniversal > 0)
-    uniFechaOut = addDiasISO(uniFechaIn, nUniversal);
+  // Fechas calculadas si no se leyeron del DOM
+  if(fIn && nDisney > 0 && !disFechaOut){
+    var dOut = new Date(fIn);
+    dOut.setDate(dOut.getDate() + nDisney);
+    disFechaOut = dOut.toISOString().slice(0,10);
+  }
+  if(disFechaOut && nUniversal > 0 && !uniFechaIn){
+    uniFechaIn = disFechaOut;
+    if(!uniFechaOut){
+      var uOut = new Date(disFechaOut);
+      uOut.setDate(uOut.getDate() + nUniversal);
+      uniFechaOut = uOut.toISOString().slice(0,10);
+    }
+  }
 
   // ── Crucero ─────────────────────────────────────────────────────────
   var crucSection = document.getElementById('sec-crucero');
@@ -3092,6 +3029,7 @@ function exportarPDF(){
   var btn = document.getElementById('btn-export');
   if(btn){ btn.textContent = '⏳ Preparando...'; btn.disabled = true; }
 
+  // Cargar jsPDF + html2canvas si no están cargados
   function loadScript(src, cb){
     if(document.querySelector('script[src="'+src+'"]')){ cb(); return; }
     var s = document.createElement('script');
@@ -3112,58 +3050,18 @@ function _generarPDFConJsPDF(btn){
   var el = document.getElementById('pdf-summary');
   if(!el){ if(btn){btn.textContent='🖨️ Exportar PDF';btn.disabled=false;} return; }
 
-  var RENDER_W = 800; // ancho fijo de render (debe coincidir con max-width del #pdf-summary)
+  var RENDER_W = 800; // px — debe coincidir con max-width de #pdf-summary
 
   // Mostrar temporalmente para captura
   var prevDisplay = el.style.display;
-  var prevPosition = el.style.position;
-  var prevTop = el.style.top;
-  var prevLeft = el.style.left;
-  var prevWidth = el.style.width;
-  var prevMaxWidth = el.style.maxWidth;
-  var prevZIndex = el.style.zIndex;
+  el.style.display    = 'block';
+  el.style.position   = 'fixed';
+  el.style.top        = '-9999px';
+  el.style.left       = '0';
+  el.style.width      = RENDER_W + 'px';
+  el.style.maxWidth   = RENDER_W + 'px';
+  el.style.zIndex     = '-1';
 
-  el.style.display = 'block';
-  el.style.position = 'fixed';
-  el.style.top = '-99999px';
-  el.style.left = '0';
-  el.style.width = RENDER_W + 'px';
-  el.style.maxWidth = RENDER_W + 'px';
-  el.style.zIndex = '-1';
-
-  function restore(){
-    el.style.display = prevDisplay;
-    el.style.position = prevPosition;
-    el.style.top = prevTop;
-    el.style.left = prevLeft;
-    el.style.width = prevWidth;
-    el.style.maxWidth = prevMaxWidth;
-    el.style.zIndex = prevZIndex;
-  }
-
-  // Escanea píxel a píxel buscando la fila más blanca en ventana ±windowPx
-  function getBestCutY(data, canvasW, nominalY, windowPx){
-    var best = nominalY;
-    var bestWhite = -1;
-    var from = Math.max(0, nominalY - windowPx);
-    var to   = Math.min(Math.floor(data.length / (canvasW * 4)) - 1, nominalY + windowPx);
-    for(var y = from; y <= to; y++){
-      var sum = 0;
-      var cols = Math.min(canvasW, 80); // samplear 80 columnas distribuidas
-      var step = Math.max(1, Math.floor(canvasW / cols));
-      var count = 0;
-      for(var x = 0; x < canvasW; x += step){
-        var idx = (y * canvasW + x) * 4;
-        sum += (data[idx] + data[idx+1] + data[idx+2]) / 3;
-        count++;
-      }
-      var whiteness = sum / count;
-      if(whiteness > bestWhite){ bestWhite = whiteness; best = y; }
-    }
-    return best;
-  }
-
-  // Esperar fuentes y layout
   setTimeout(function(){
     html2canvas(el, {
       scale: 2,
@@ -3174,71 +3072,130 @@ function _generarPDFConJsPDF(btn){
       windowWidth: RENDER_W,
       logging: false
     }).then(function(canvas){
-      restore();
+
+      // Restaurar DOM
+      el.style.display  = prevDisplay;
+      el.style.position = '';
+      el.style.top      = '';
+      el.style.left     = '';
+      el.style.width    = '';
+      el.style.maxWidth = '';
+      el.style.zIndex   = '';
 
       var { jsPDF } = window.jspdf;
-      // Usar puntos (pt) para máxima precisión
-      var pdf = new jsPDF({ orientation:'portrait', unit:'pt', format:'a4' });
-      var pageW_pt = pdf.internal.pageSize.getWidth();   // 595.28pt
-      var pageH_pt = pdf.internal.pageSize.getHeight();  // 841.89pt
-      var margin_pt = 22;
-      var printW_pt = pageW_pt - margin_pt * 2;          // ancho imprimible en pt
 
-      var canvasW = canvas.width;   // RENDER_W * scale = 1600px
+      // ── Constantes A4 en pt ──────────────────────────────────────────
+      var PAGE_W_PT  = 595.28;
+      var PAGE_H_PT  = 841.89;
+      var MARGIN_PT  = 20;
+      var PRINT_W_PT = PAGE_W_PT - MARGIN_PT * 2;   // 555.28 pt
+      var PAGE_CONTENT_H_PT = PAGE_H_PT - MARGIN_PT * 2;  // 801.89 pt
+
+      var canvasW = canvas.width;   // RENDER_W * scale (1600px)
       var canvasH = canvas.height;
 
-      // Ratio: cuántos px de canvas equivalen a 1pt
-      var pxPerPt = canvasW / printW_pt;
+      // Ratio: cuántos px del canvas caben en 1 pt del PDF
+      var pxPerPt = canvasW / PRINT_W_PT;
 
-      var pageH_px  = (pageH_pt - margin_pt * 2) * pxPerPt; // alto de página en px de canvas
-      var windowPx  = Math.round(30 * pxPerPt);              // ventana de búsqueda ±30pt
+      // Alto total del documento en pt
+      var totalDocH_pt = canvasH / pxPerPt;
+      var numPages = Math.ceil(totalDocH_pt / PAGE_CONTENT_H_PT);
 
-      // Obtener datos de píxeles para análisis de whiteness
-      var ctx = canvas.getContext('2d');
-      var pixelData = ctx.getImageData(0, 0, canvasW, canvasH).data;
-
-      // Calcular puntos de corte con smart cut
-      var cuts = [0]; // siempre empieza en 0
-      var pos = 0;
-      while(pos + pageH_px < canvasH){
-        var nominalY = Math.round(pos + pageH_px);
-        var bestY    = getBestCutY(pixelData, canvasW, nominalY, windowPx);
-        cuts.push(bestY);
-        pos = bestY;
+      // ── Smart cut: buscar la fila más blanca cerca del corte ─────────
+      function getPixelBrightness(imageData, y){
+        // Promedio de luminancia de una fila horizontal
+        var data  = imageData.data;
+        var width = imageData.width;
+        var sum   = 0;
+        for(var x = 0; x < width; x++){
+          var i = (y * width + x) * 4;
+          // Luminancia perceptual
+          sum += 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2];
+        }
+        return sum / width; // 0=negro, 255=blanco
       }
-      cuts.push(canvasH);
 
-      // Generar páginas
-      for(var i = 0; i < cuts.length - 1; i++){
+      function getBestCutY_px(nominalY_px, windowPt){
+        // Busca la fila más blanca en ±windowPt alrededor del corte nominal
+        var halfWin = Math.round(windowPt * pxPerPt);
+        var yMin = Math.max(0, Math.round(nominalY_px) - halfWin);
+        var yMax = Math.min(canvasH - 1, Math.round(nominalY_px) + halfWin);
+        if(yMin >= yMax) return Math.round(nominalY_px);
+
+        // Leer franja completa de una vez (eficiente)
+        var strip = canvas.getContext('2d')
+          .getImageData(0, yMin, canvasW, yMax - yMin);
+
+        var bestY     = Math.round(nominalY_px);
+        var bestScore = -1;
+        for(var row = 0; row < (yMax - yMin); row++){
+          var score = getPixelBrightness(strip, row);
+          if(score > bestScore){
+            bestScore = score;
+            bestY     = yMin + row;
+          }
+        }
+        return bestY;
+      }
+
+      // ── Calcular puntos de corte óptimos ────────────────────────────
+      var cutPoints_px = [0]; // inicio
+      for(var p = 1; p < numPages; p++){
+        var nominalY_px = p * PAGE_CONTENT_H_PT * pxPerPt;
+        var bestY_px    = getBestCutY_px(nominalY_px, 30);
+        cutPoints_px.push(bestY_px);
+      }
+      cutPoints_px.push(canvasH); // fin
+
+      // ── Generar PDF ──────────────────────────────────────────────────
+      var pdf = new jsPDF({ orientation:'portrait', unit:'pt', format:'a4' });
+
+      for(var i = 0; i < numPages; i++){
         if(i > 0) pdf.addPage();
 
-        var y0 = cuts[i];
-        var y1 = cuts[i+1];
-        var sliceH_px = y1 - y0;
+        var srcY_px = cutPoints_px[i];
+        var srcH_px = cutPoints_px[i + 1] - srcY_px;
+        if(srcH_px <= 0) continue;
 
-        var pageCanvas = document.createElement('canvas');
+        // Canvas de la franja
+        var pageCanvas    = document.createElement('canvas');
         pageCanvas.width  = canvasW;
-        pageCanvas.height = sliceH_px;
-        var pctx = pageCanvas.getContext('2d');
-        pctx.fillStyle = '#ffffff';
-        pctx.fillRect(0, 0, canvasW, sliceH_px);
-        pctx.drawImage(canvas, 0, y0, canvasW, sliceH_px, 0, 0, canvasW, sliceH_px);
+        pageCanvas.height = srcH_px;
+        var ctx = pageCanvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvasW, srcH_px);
+        ctx.drawImage(canvas,
+          0, srcY_px, canvasW, srcH_px,
+          0, 0,       canvasW, srcH_px
+        );
 
-        var imgData   = pageCanvas.toDataURL('image/jpeg', 0.93);
-        var sliceH_pt = sliceH_px / pxPerPt;
-        pdf.addImage(imgData, 'JPEG', margin_pt, margin_pt, printW_pt, sliceH_pt);
+        var imgData   = pageCanvas.toDataURL('image/jpeg', 0.95);
+        var sliceH_pt = srcH_px / pxPerPt;
+
+        pdf.addImage(imgData, 'JPEG',
+          MARGIN_PT, MARGIN_PT,
+          PRINT_W_PT, sliceH_pt
+        );
       }
 
-      // Nombre del archivo
+      // ── Guardar ──────────────────────────────────────────────────────
       var clienteEl = document.getElementById('hdr-cliente');
-      var apellido = clienteEl ? clienteEl.textContent.trim().replace(/^Familia\s*/i,'').replace(/\s+/g,'_') : 'Cliente';
-      var filename = 'Presupuesto_ConMagui_' + apellido + '.pdf';
-      pdf.save(filename);
+      var apellido  = clienteEl
+        ? clienteEl.textContent.trim().replace(/^Familia\s*/i,'').replace(/\s+/g,'_')
+        : 'Cliente';
+      pdf.save('Presupuesto_ConMagui_' + apellido + '.pdf');
 
       if(btn){ btn.textContent = '🖨️ Exportar PDF'; btn.disabled = false; }
+
     }).catch(function(err){
       console.error('Error generando PDF:', err);
-      restore();
+      el.style.display  = prevDisplay;
+      el.style.position = '';
+      el.style.top      = '';
+      el.style.left     = '';
+      el.style.width    = '';
+      el.style.maxWidth = '';
+      el.style.zIndex   = '';
       if(btn){ btn.textContent = '🖨️ Exportar PDF'; btn.disabled = false; }
       alert('Error al generar el PDF. Intentá de nuevo.');
     });
