@@ -1315,8 +1315,8 @@ body.edit-on .price-edit-panel{display:flex;flex-wrap:wrap;align-items:center;}
 /* ─── ESTILOS DEL PDF SUMMARY ─────────────────── */
 #pdf-summary{
   font-family:'Montserrat',sans-serif;
-  width:100%;
-  max-width:960px;
+  width:800px;
+  max-width:800px;
   margin:0 auto;
   background:white;
 }
@@ -3114,27 +3114,29 @@ function _generarPDFConJsPDF(btn){
   var el = document.getElementById('pdf-summary');
   if(!el){ if(btn){btn.textContent='🖨️ Exportar PDF';btn.disabled=false;} return; }
 
-  // Mostrar temporalmente para captura
+  // Ancho de render fijo: debe coincidir con max-width del #pdf-summary (800px)
+  var RENDER_W = 800;
+
+  // Mostrar fuera de pantalla para captura
   var prevDisplay = el.style.display;
   el.style.display = 'block';
   el.style.position = 'fixed';
-  el.style.top = '-9999px';
+  el.style.top = '-99999px';
   el.style.left = '0';
-  el.style.width = '900px';
+  el.style.width = RENDER_W + 'px';
   el.style.zIndex = '-1';
 
-  // Esperar fuentes y layout
   setTimeout(function(){
     html2canvas(el, {
-      scale: 1.8,
+      scale: 2,
       useCORS: true,
       allowTaint: true,
       backgroundColor: '#ffffff',
-      width: 860,
-      windowWidth: 860,
+      width: RENDER_W,
+      windowWidth: RENDER_W,
       logging: false
     }).then(function(canvas){
-      // Restaurar estado original
+      // Restaurar
       el.style.display = prevDisplay;
       el.style.position = '';
       el.style.top = '';
@@ -3143,47 +3145,49 @@ function _generarPDFConJsPDF(btn){
       el.style.zIndex = '';
 
       var { jsPDF } = window.jspdf;
-      var pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+      var pdf = new jsPDF({ orientation:'portrait', unit:'pt', format:'a4' });
 
-      var pageW = pdf.internal.pageSize.getWidth();   // 210mm
-      var pageH = pdf.internal.pageSize.getHeight();  // 297mm
-      var margin = 6; // mm — reducido para aprovechar más espacio de página
-      var printW = pageW - margin * 2;
+      // A4 en puntos: 595.28 x 841.89 pt
+      var pageW_pt = pdf.internal.pageSize.getWidth();
+      var pageH_pt = pdf.internal.pageSize.getHeight();
+      var margin_pt = 20; // ~7mm
+      var printW_pt = pageW_pt - margin_pt * 2;
 
-      var imgW = canvas.width;
-      var imgH = canvas.height;
-      var ratio = printW / (imgW * 0.264583); // px → mm (96dpi → mm)
-      var totalH = imgH * 0.264583 * ratio;   // alto total en mm
+      // canvas está en px a scale=2 → canvas.width = RENDER_W * 2
+      var canvasW = canvas.width;   // px
+      var canvasH = canvas.height;  // px
 
-      var pageContentH = pageH - margin * 2;
-      var numPages = Math.ceil(totalH / pageContentH);
+      // Ratio: cuántos px corresponden a 1 pt de impresión
+      var pxPerPt = canvasW / printW_pt;
+
+      // Alto total del documento en puntos
+      var totalH_pt = canvasH / pxPerPt;
+      var pageContentH_pt = pageH_pt - margin_pt * 2;
+      var numPages = Math.ceil(totalH_pt / pageContentH_pt);
 
       for(var i = 0; i < numPages; i++){
         if(i > 0) pdf.addPage();
 
-        var srcY = i * pageContentH / ratio / 0.264583; // en px
-        var srcH = pageContentH / ratio / 0.264583;
+        var srcY_px = Math.round(i * pageContentH_pt * pxPerPt);
+        var srcH_px = Math.round(Math.min(pageContentH_pt * pxPerPt, canvasH - srcY_px));
+        if(srcH_px <= 0) break;
 
-        // Crear canvas de la franja de esta página
         var pageCanvas = document.createElement('canvas');
-        pageCanvas.width = imgW;
-        pageCanvas.height = Math.min(srcH, imgH - srcY);
+        pageCanvas.width  = canvasW;
+        pageCanvas.height = srcH_px;
         var ctx = pageCanvas.getContext('2d');
         ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
-        ctx.drawImage(canvas, 0, srcY, imgW, pageCanvas.height, 0, 0, imgW, pageCanvas.height);
+        ctx.fillRect(0, 0, canvasW, srcH_px);
+        ctx.drawImage(canvas, 0, srcY_px, canvasW, srcH_px, 0, 0, canvasW, srcH_px);
 
-        var imgData = pageCanvas.toDataURL('image/jpeg', 0.95);
-        var sliceH = pageCanvas.height * 0.264583 * ratio;
-        pdf.addImage(imgData, 'JPEG', margin, margin, printW, sliceH);
+        var imgData = pageCanvas.toDataURL('image/jpeg', 0.92);
+        var sliceH_pt = srcH_px / pxPerPt;
+        pdf.addImage(imgData, 'JPEG', margin_pt, margin_pt, printW_pt, sliceH_pt);
       }
 
-      // Nombre del archivo
       var clienteEl = document.getElementById('hdr-cliente');
       var apellido = clienteEl ? clienteEl.textContent.trim().replace(/^Familia\s*/i,'').replace(/\s+/g,'_') : 'Cliente';
-      var filename = 'Presupuesto_ConMagui_' + apellido + '.pdf';
-      pdf.save(filename);
-
+      pdf.save('Presupuesto_ConMagui_' + apellido + '.pdf');
       if(btn){ btn.textContent = '🖨️ Exportar PDF'; btn.disabled = false; }
     }).catch(function(err){
       console.error('Error generando PDF:', err);
@@ -3196,7 +3200,7 @@ function _generarPDFConJsPDF(btn){
       if(btn){ btn.textContent = '🖨️ Exportar PDF'; btn.disabled = false; }
       alert('Error al generar el PDF. Intentá de nuevo.');
     });
-  }, 300);
+  }, 400);
 }
 </script>
 <footer style="background:#0B1628;padding:28px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-top:40px;print-color-adjust:exact;-webkit-print-color-adjust:exact;">
