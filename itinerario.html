@@ -218,6 +218,8 @@ body{font-family:'Montserrat',sans-serif;background:#F0EBE5;min-height:100vh;pad
   <button class="tb-btn export" onclick="exportarPDF()">🖨️ Exportar PDF</button>
   <button class="tb-btn wp" onclick="enviarWP()">📲 Enviar por WhatsApp</button>
   <span class="tb-info">Itinerario editable · Click en cada día para expandir</span>
+  <div style="flex:1"></div>
+  <button class="tb-btn" onclick="abrirParametros()" title="Configuración del agente" style="opacity:0.7;font-size:18px;padding:6px 10px;">⚙️</button>
 </div>
 
 <!-- DOCUMENTO -->
@@ -977,6 +979,12 @@ function toggleDay(i) {
   const toggle = document.querySelector(`#day-${i} .day-toggle`);
   body.classList.toggle('open');
   toggle.classList.toggle('open');
+}
+
+function abrirParametros() {
+  // Abrir parametros.html en nueva pestaña, relativo a la URL actual
+  var base = window.location.href.replace(/\/itinerario(\?.*)?$/, '/');
+  window.open(base + 'parametros', '_blank');
 }
 
 function toggleAll(open) {
