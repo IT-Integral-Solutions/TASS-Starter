@@ -3082,8 +3082,9 @@ function serializarPresupuesto(){
 
 function abrirItinerario(){
   var budget = serializarPresupuesto();
-  var encoded = btoa(unescape(encodeURIComponent(JSON.stringify(budget))));
-  // Sin .html para evitar redirect de Cloudflare Pages que pierde el ?budget=
+  // encodeURIComponent evita que los '+' y '=' del base64 rompan URLSearchParams
+  var encoded = encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(budget)))));
+  // URL sin .html: Cloudflare Pages redirige .html→sin extensión y pierde el query string
   var base = window.location.href.replace(/\/presupuesto(\.html)?(\?.*)?$/, '/');
   var url = base + 'itinerario?budget=' + encoded;
   window.open(url, '_blank');
