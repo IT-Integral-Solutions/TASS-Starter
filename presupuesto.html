@@ -1925,8 +1925,37 @@ document.addEventListener('DOMContentLoaded',function(){
   setByText('Familia Apellido', 'Familia '+apellido);
   setByText('2 adultos · 2 menores (6 y 11 años)', vStr);
   setByText('Septiembre 2026', periodo);
-  if(d.fIn) setByText('01 Septiembre 2026', new Date(d.fIn).toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'}));
-  if(d.fOut) setByText('07 Septiembre 2026', new Date(d.fOut).toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'}));
+  // ── Calcular fechas por segmento (Disney / Universal) ──────────────
+  // diasDis y diasUni vienen como "5 días" o "4 días" del select
+  function parseDiasN(str){ var m=String(str||'').match(/^(\d+)/); return m?parseInt(m[1]):0; }
+  function addDiasToISO(iso, n){
+    var dt = new Date(iso+'T12:00:00'); dt.setDate(dt.getDate()+n);
+    return dt.toISOString().slice(0,10);
+  }
+  function fmtFechaES(iso){
+    return new Date(iso+'T12:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});
+  }
+
+  var nDis = parseDiasN(d.diasDis);  // 5 → 5 noches Disney
+  var nUni = parseDiasN(d.diasUni);  // 4 → 4 noches Universal
+
+  // Fechas por segmento calculadas desde fIn + noches
+  var disFIn  = d.fIn || '';
+  var disFOut = (disFIn && nDis > 0) ? addDiasToISO(disFIn, nDis) : '';
+  var uniFIn  = disFOut || '';
+  var uniFOut = (uniFIn && nUni > 0) ? addDiasToISO(uniFIn, nUni) : '';
+
+  // Setear fechas en DOM con IDs específicos (no setByText genérico)
+  var elDisIn  = document.getElementById('dis-checkin');
+  var elDisOut = document.getElementById('dis-checkout');
+  var elUniIn  = document.getElementById('uni-checkin');
+  var elUniOut = document.getElementById('uni-checkout');
+
+  if(elDisIn  && disFIn)  elDisIn.textContent  = fmtFechaES(disFIn);
+  if(elDisOut && disFOut) elDisOut.textContent = fmtFechaES(disFOut);
+  if(elUniIn  && uniFIn)  elUniIn.textContent  = fmtFechaES(uniFIn);
+  if(elUniOut && uniFOut) elUniOut.textContent = fmtFechaES(uniFOut);
+
   if(d.diasDis) setByText('4 días · base un parque/día', d.diasDis+' · base un parque/día');
 
   // ── 2. MOSTRAR/OCULTAR SECCIONES DISNEY / UNIVERSAL ──────────────────
@@ -2794,179 +2823,227 @@ function buildPDFSummary(){
 // Empaqueta todo lo confirmado en el presupuesto para pasarlo al itinerario
 
 function serializarPresupuesto(){
-  // ── Leer datos del formulario (?data= del formulario, fechas ISO YYYY-MM-DD) ──
+  // ── Datos base del cliente ──────────────────────────────────────────
+  var clienteEl = document.getElementById('hdr-cliente');
+  var fechaEl   = document.getElementById('hdr-fecha');
+  var viajeEl   = document.getElementById('hdr-viaje');
+
+  // ── Leer datos del URL param original ──────────────────────────────
   var urlParams = new URLSearchParams(window.location.search);
   var rawData = urlParams.get('data') || '';
   var d = {};
-  try { d = JSON.parse(decodeURIComponent(escape(atob(rawData)))); } catch(e){
-    try { d = JSON.parse(atob(rawData)); } catch(e2){}
+  try { d = JSON.parse(atob(rawData)); } catch(e){}
+
+  // ── Hoteles seleccionados (visible = seleccionado/recomendado) ──────
+  var hotelDisney = null;
+  ['d1','d2','d3'].forEach(function(k){
+    if(hotelDisney) return;
+    var row = document.querySelector('[data-row="'+k+'"]');
+    if(!row || row.style.display==='none') return;
+    var hName  = row.querySelector('.opt-hotel');
+    var hDet   = row.querySelector('.opt-details');
+    var hPrice = row.querySelector('.opt-price');
+    if(hName){
+      hotelDisney = {
+        nombre: hName.textContent.trim(),
+        detalle: hDet ? hDet.textContent.trim() : '',
+        precio: hPrice ? hPrice.textContent.trim() : ''
+      };
+    }
+  });
+
+  var hotelUniversal = null;
+  ['u1','u2','u3'].forEach(function(k){
+    if(hotelUniversal) return;
+    var row = document.querySelector('[data-row="'+k+'"]');
+    if(!row || row.style.display==='none') return;
+    var hName  = row.querySelector('.opt-hotel');
+    var hDet   = row.querySelector('.opt-details');
+    var hPrice = row.querySelector('.opt-price');
+    if(hName){
+      hotelUniversal = {
+        nombre: hName.textContent.trim(),
+        detalle: hDet ? hDet.textContent.trim() : '',
+        precio: hPrice ? hPrice.textContent.trim() : ''
+      };
+    }
+  });
+
+  // ── Fechas por segmento ─────────────────────────────────────────────
+  // Disney: fIn → fOutDis, Universal: fOutDis → fOutUni, Crucero: fOutUni → fFin
+  var fIn     = d.fIn  || '';
+  var fOut    = d.fOut || '';
+  var hasDis  = d.dest && (d.dest.includes('Disney') || d.dest.includes('Ambos'));
+  var hasUni  = d.dest && (d.dest.includes('Universal') || d.dest.includes('Ambos'));
+
+  // Leer fechas editables de las cajas Disney/Universal en el presupuesto
+  var disFechaIn  = fIn;
+  var disFechaOut = '';
+  var uniFechaIn  = '';
+  var uniFechaOut = '';
+
+  // Intentar leer desde .park-dates del presupuesto si existen
+  var disBox = document.getElementById('disney-parks');
+  var uniBox = document.getElementById('universal-parks');
+  if(disBox){
+    var pdVals = disBox.querySelectorAll('.pd-val');
+    if(pdVals[0]) disFechaIn  = pdVals[0].textContent.trim() || disFechaIn;
+    if(pdVals[1]) disFechaOut = pdVals[1].textContent.trim();
+  }
+  if(uniBox){
+    var pdValsU = uniBox.querySelectorAll('.pd-val');
+    if(pdValsU[0]) uniFechaIn  = pdValsU[0].textContent.trim();
+    if(pdValsU[1]) uniFechaOut = pdValsU[1].textContent.trim();
   }
 
-  // ── Helper: "4 días" → 4 ─────────────────────────────────────────
-  function parseDias(str){
-    var m = String(str||'').match(/^(\d+)/);
-    return m ? parseInt(m[1]) : 0;
+  // Calcular noches Disney y Universal desde diasDis/diasUni del formulario
+  var nDisney    = parseInt(d.diasDis) || 0;
+  var nUniversal = parseInt(d.diasUni) || 0;
+
+  // Fechas calculadas si no se leyeron del DOM
+  if(fIn && nDisney > 0 && !disFechaOut){
+    var dOut = new Date(fIn);
+    dOut.setDate(dOut.getDate() + nDisney);
+    disFechaOut = dOut.toISOString().slice(0,10);
   }
-
-  // ── Helper: "01 Septiembre 2026" → "2026-09-01" ──────────────────
-  var MESES = {enero:1,febrero:2,marzo:3,abril:4,mayo:5,junio:6,
-               julio:7,agosto:8,septiembre:9,octubre:10,noviembre:11,diciembre:12};
-  function fechaESaISO(txt){
-    txt = String(txt||'').trim().toLowerCase();
-    if(/^\d{4}-\d{2}-\d{2}$/.test(txt)) return txt; // ya es ISO
-    var m = txt.match(/(\d{1,2})\s+([a-z\u00e1\u00e9\u00ed\u00f3\u00fa\u00fc]+)\s+(\d{4})/);
-    if(m && MESES[m[2]]) return m[3]+'-'+('0'+MESES[m[2]]).slice(-2)+'-'+('0'+m[1]).slice(-2);
-    return '';
-  }
-
-  // ── Helper: sumar N días a ISO ────────────────────────────────────
-  function addDias(iso, n){
-    if(!iso) return '';
-    var dt = new Date(iso+'T12:00:00');
-    dt.setDate(dt.getDate()+n);
-    return dt.toISOString().slice(0,10);
-  }
-
-  // ── Helper: leer texto de elemento por ID → convertir a ISO ──────
-  function leerFechaDOM(id){
-    var el = document.getElementById(id);
-    return el ? fechaESaISO(el.textContent) : '';
-  }
-
-  // ── Destino ───────────────────────────────────────────────────────
-  var dest   = d.dest || '';
-  var hasDis = !!(dest.includes('Disney') || dest.includes('Ambos'));
-  var hasUni = !!(dest.includes('Universal') || dest.includes('Ambos'));
-
-  // ── Noches por destino (del formulario) ───────────────────────────
-  var nDis = parseDias(d.diasDis);   // "6 días" → 6
-  var nUni = parseDias(d.diasUni);   // "2 días" → 2
-
-  // ── Fechas globales del viaje (ISO, del formulario) ───────────────
-  var fInGlobal  = d.fIn  || '';   // ej: "2026-09-10"
-  var fOutGlobal = d.fOut || '';   // ej: "2026-09-21"
-
-  // ── Fechas por segmento ───────────────────────────────────────────
-  // Prioridad 1: leer del DOM (el agente pudo haberlas editado)
-  // Prioridad 2: calcular desde fIn + noches
-  var disFIn  = leerFechaDOM('dis-checkin')  || fInGlobal;
-  var disFOut = leerFechaDOM('dis-checkout') || '';
-  var uniFIn  = leerFechaDOM('uni-checkin')  || '';
-  var uniFOut = leerFechaDOM('uni-checkout') || '';
-
-  // Calcular faltantes desde noches
-  if(!disFOut) disFOut = disFIn && nDis > 0 ? addDias(disFIn, nDis) : fOutGlobal;
-  if(!uniFIn)  uniFIn  = disFOut;
-  if(!uniFOut) uniFOut = uniFIn && nUni > 0 ? addDias(uniFIn, nUni) : '';
-
-  // ── Crucero ───────────────────────────────────────────────────────
-  var crucSec = document.getElementById('sec-crucero');
-  var hasCruc = !!(crucSec && crucSec.style.display !== 'none');
-  var crucNoches = 3;
-  var crucLabel  = '';
-  if(hasCruc){
-    var btn = document.querySelector('.crucero-itin-btn.active');
-    if(btn){
-      var mm = btn.textContent.match(/(\d+)\s*noches?/i);
-      if(mm) crucNoches = parseInt(mm[1]);
-      crucLabel = btn.textContent.trim();
+  if(disFechaOut && nUniversal > 0 && !uniFechaIn){
+    uniFechaIn = disFechaOut;
+    if(!uniFechaOut){
+      var uOut = new Date(disFechaOut);
+      uOut.setDate(uOut.getDate() + nUniversal);
+      uniFechaOut = uOut.toISOString().slice(0,10);
     }
   }
-  var crucFIn  = uniFOut || disFOut || '';
-  var crucFOut = crucFIn ? addDias(crucFIn, crucNoches) : '';
 
-  // ── Hotel Disney (primer row visible) ─────────────────────────────
-  var hotelDis = null;
-  ['d1','d2','d3'].forEach(function(k){
-    if(hotelDis) return;
-    var row = document.querySelector('[data-row="'+k+'"]');
-    if(!row || row.style.display==='none') return;
-    var n = row.querySelector('.opt-hotel');
-    var det = row.querySelector('.opt-details');
-    if(n) hotelDis = { nombre: n.textContent.trim(), detalle: det ? det.textContent.trim() : '' };
-  });
-
-  // ── Hotel Universal (primer row visible) ──────────────────────────
-  var hotelUni = null;
-  ['u1','u2','u3'].forEach(function(k){
-    if(hotelUni) return;
-    var row = document.querySelector('[data-row="'+k+'"]');
-    if(!row || row.style.display==='none') return;
-    var n = row.querySelector('.opt-hotel');
-    var det = row.querySelector('.opt-details');
-    if(n) hotelUni = { nombre: n.textContent.trim(), detalle: det ? det.textContent.trim() : '' };
-  });
-
-  // ── Parques activos ───────────────────────────────────────────────
-  var pDis = [], pUni = [];
-  document.querySelectorAll('#disney-parks .park-card').forEach(function(c){
-    if(c.style.display==='none') return;
-    var n = c.querySelector('.pc-name');
-    if(n) pDis.push(n.textContent.trim());
-  });
-  document.querySelectorAll('#universal-parks .park-card').forEach(function(c){
-    if(c.style.display==='none') return;
-    var n = c.querySelector('.pc-name');
-    if(n) pUni.push(n.textContent.trim());
-  });
-
-  // ── Promos activas ────────────────────────────────────────────────
-  var promos = [];
-  var secPro = document.getElementById('sec-promo');
-  if(secPro && secPro.style.display !== 'none'){
-    [{id:'promo-dia-gratis',lbl:'🌅 Día gratis en check-in'},
-     {id:'promo-comidas',   lbl:'🍽️ Descuento en plan de comidas'},
-     {id:'promo-hotel',     lbl:'🏨 Descuento en alojamiento'},
-     {id:'promo-tickets',   lbl:'🎟️ Descuento en tickets'}
-    ].forEach(function(p){
-      var el = document.getElementById(p.id);
-      if(el && el.style.display !== 'none') promos.push(p.lbl);
-    });
+  // ── Crucero ─────────────────────────────────────────────────────────
+  var crucSection = document.getElementById('sec-crucero');
+  var tieneCrucero = crucSection && crucSection.style.display !== 'none';
+  var crucNoches = 3; // default
+  var crucItinLabel = '';
+  if(tieneCrucero){
+    var crucBtn = document.querySelector('.crucero-itin-btn.active');
+    if(crucBtn){
+      var txt = crucBtn.textContent;
+      var m = txt.match(/(\d+)\s*noches?/i);
+      if(m) crucNoches = parseInt(m[1]);
+      crucItinLabel = txt.trim();
+    }
   }
 
-  // ── Nombre cliente ────────────────────────────────────────────────
-  var nomEl = document.getElementById('hdr-cliente');
-  var nombre = d.nom || (nomEl ? nomEl.textContent.trim() : '');
+  var crucFechaIn  = (uniFechaOut || disFechaOut) || '';
+  var crucFechaOut = '';
+  if(crucFechaIn && tieneCrucero){
+    var cOut = new Date(crucFechaIn);
+    cOut.setDate(cOut.getDate() + crucNoches);
+    crucFechaOut = cOut.toISOString().slice(0,10);
+  }
 
-  // ── Objeto final ──────────────────────────────────────────────────
-  return {
-    nombre:   nombre,
+  // ── Tickets Disney ──────────────────────────────────────────────────
+  var ticketsDisney    = [];
+  var ticketsUniversal = [];
+  document.querySelectorAll('.ticket-type').forEach(function(tt){
+    var lbl = tt.querySelector('.tt-name, .tt-label, b, strong');
+    if(!lbl) return;
+    var precio = tt.querySelector('.tt-price, .opt-price');
+    var nombre = lbl.textContent.trim();
+    var priceVal = precio ? precio.textContent.trim() : '';
+    // Diferenciar Disney vs Universal por el bloque padre
+    var blk = tt.closest('.ticket-block');
+    if(!blk) return;
+    var head = blk.querySelector('.tb-head .tbh-title');
+    if(head && head.textContent.includes('Universal')){
+      ticketsUniversal.push({ nombre: nombre, precio: priceVal });
+    } else {
+      ticketsDisney.push({ nombre: nombre, precio: priceVal });
+    }
+  });
+
+  // ── Promociones activas ─────────────────────────────────────────────
+  var promos = [];
+  var secPromo = document.getElementById('sec-promo');
+  if(secPromo && secPromo.style.display !== 'none'){
+    var promoMap = {
+      'promo-dia-gratis': '🌅 Día gratis en check-in',
+      'promo-comidas': '🍽️ Descuento en plan de comidas',
+      'promo-hotel': '🏨 Descuento en alojamiento',
+      'promo-tickets': '🎟️ Descuento en tickets'
+    };
+    Object.keys(promoMap).forEach(function(id){
+      var el = document.getElementById(id);
+      if(el && el.style.display !== 'none') promos.push(promoMap[id]);
+    });
+    // Leer texto editable de la sección promo
+    var promoEdit = secPromo.querySelector('[data-editable], .promo-text, p');
+    if(promoEdit && promoEdit.textContent.trim()){
+      promos.push('📝 ' + promoEdit.textContent.trim());
+    }
+  }
+
+  // ── Parques Disney incluidos ─────────────────────────────────────────
+  var parquesDisney = [];
+  document.querySelectorAll('#disney-parks .park-card:not(.removed)').forEach(function(card){
+    var name = card.querySelector('.pc-name');
+    if(name) parquesDisney.push(name.textContent.trim());
+  });
+
+  // ── Parques Universal incluidos ──────────────────────────────────────
+  var parquesUniversal = [];
+  document.querySelectorAll('#universal-parks .park-card:not(.removed)').forEach(function(card){
+    var name = card.querySelector('.pc-name');
+    if(name) parquesUniversal.push(name.textContent.trim());
+  });
+
+  // ── Construir objeto final ──────────────────────────────────────────
+  var budget = {
+    // Cliente
+    nombre:   d.nom || (clienteEl ? clienteEl.textContent.trim() : ''),
     nAdultos: parseInt(d.nAdu) || 2,
     nMenores: parseInt(d.nMen) || 0,
     edades:   d.edades || [],
-    destino:  dest,
-    hasDis:   hasDis,
-    hasUni:   hasUni,
-    fIn:      fInGlobal,
-    fOut:     fOutGlobal,
+    // Destinos
+    destino:  d.dest || '',
+    hasDis:   !!hasDis,
+    hasUni:   !!hasUni,
+    // Fechas generales
+    fIn:  fIn,
+    fOut: fOut,
+    // Segmento Disney
     disney: hasDis ? {
-      hotelNombre:  hotelDis ? hotelDis.nombre  : '',
-      hotelDetalle: hotelDis ? hotelDis.detalle : '',
-      fIn:    disFIn,
-      fOut:   disFOut,
-      noches: nDis,
-      parques: pDis
+      hotelNombre: hotelDisney ? hotelDisney.nombre : '',
+      hotelDetalle: hotelDisney ? hotelDisney.detalle : '',
+      fIn:    disFechaIn,
+      fOut:   disFechaOut,
+      noches: nDisney,
+      parques: parquesDisney
     } : null,
+    // Segmento Universal
     universal: hasUni ? {
-      hotelNombre:  hotelUni ? hotelUni.nombre  : '',
-      hotelDetalle: hotelUni ? hotelUni.detalle : '',
-      fIn:    uniFIn,
-      fOut:   uniFOut,
-      noches: nUni,
-      parques: pUni
+      hotelNombre: hotelUniversal ? hotelUniversal.nombre : '',
+      hotelDetalle: hotelUniversal ? hotelUniversal.detalle : '',
+      fIn:    uniFechaIn,
+      fOut:   uniFechaOut,
+      noches: nUniversal,
+      parques: parquesUniversal
     } : null,
-    crucero: hasCruc ? {
-      fIn:       crucFIn,
-      fOut:      crucFOut,
-      noches:    crucNoches,
-      itinLabel: crucLabel
+    // Segmento Crucero
+    crucero: tieneCrucero ? {
+      fIn:    crucFechaIn,
+      fOut:   crucFechaOut,
+      noches: crucNoches,
+      itinLabel: crucItinLabel
     } : null,
-    promos:     promos,
-    extras:     Array.isArray(d.extras) ? d.extras : [],
-    catHotel:   d.catHotel   || '',
+    // Tickets
+    ticketsDisney:    ticketsDisney,
+    ticketsUniversal: ticketsUniversal,
+    // Extras & promos
+    promos: promos,
+    extras: d.extras || [],
+    catHotel: d.catHotel || '',
     transporte: d.transporte || '',
-    mes:        d.mes        || ''
+    mes: d.mes || ''
   };
+
+  return budget;
 }
 
 function abrirItinerario(){
