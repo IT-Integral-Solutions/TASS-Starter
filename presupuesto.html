@@ -3083,7 +3083,9 @@ function serializarPresupuesto(){
 function abrirItinerario(){
   var budget = serializarPresupuesto();
   var encoded = btoa(unescape(encodeURIComponent(JSON.stringify(budget))));
-  var url = './itinerario.html?budget=' + encoded;
+  // Sin .html para evitar redirect de Cloudflare Pages que pierde el ?budget=
+  var base = window.location.href.replace(/\/presupuesto(\.html)?(\?.*)?$/, '/');
+  var url = base + 'itinerario?budget=' + encoded;
   window.open(url, '_blank');
 }
 
