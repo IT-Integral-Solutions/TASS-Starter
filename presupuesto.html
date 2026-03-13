@@ -45,7 +45,7 @@ body{background:#F0EBE5;font-family:'Montserrat',sans-serif;min-height:100vh;}
 /* ─── HEADER ──────────────────────────────────── */
 .pres-header{
   background:linear-gradient(135deg,#1A0A2E 0%,#2A1A3E 42%,#1E0F36 68%,#160826 100%);
-  padding:22px 40px 32px;position:relative;overflow:hidden;
+  padding:36px 50px 32px;position:relative;overflow:hidden;
 }
 .pres-header::before{content:'';position:absolute;inset:0;background:
   radial-gradient(ellipse 56% 52% at 4% 8%,rgba(212,116,143,.34) 0%,transparent 55%),
@@ -66,7 +66,7 @@ body{background:#F0EBE5;font-family:'Montserrat',sans-serif;min-height:100vh;}
 .hdr-val{font-size:13px;font-weight:600;color:white;}
 
 /* ─── BODY ────────────────────────────────────── */
-.pres-body{padding:22px 40px 26px;}
+.pres-body{padding:32px 50px 36px;}
 
 /* SECTION LABEL */
 .sec-lbl{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
@@ -1324,7 +1324,7 @@ body.edit-on .price-edit-panel{display:flex;flex-wrap:wrap;align-items:center;}
 
 /* Sección del resumen */
 .pdf-section{
-  margin-bottom:18px;
+  margin-bottom:28px;
   break-inside:avoid;
 }
 .pdf-section-title{
@@ -1349,7 +1349,7 @@ body.edit-on .price-edit-panel{display:flex;flex-wrap:wrap;align-items:center;}
 .pdf-parks-grid{
   display:grid;
   grid-template-columns:1fr 1fr;
-  gap:7px;
+  gap:10px;
 }
 .pdf-park-card{
   border-radius:10px;
@@ -1359,25 +1359,25 @@ body.edit-on .price-edit-panel{display:flex;flex-wrap:wrap;align-items:center;}
 }
 .pdf-park-img{
   width:100%;
-  height:70px;
+  height:90px;
   background-size:cover;
   background-position:center;
   display:block;
 }
 .pdf-park-info{
-  padding:6px 8px;
+  padding:8px 10px;
 }
 .pdf-park-name{
   font-family:'Playfair Display',serif;
-  font-size:11px;
+  font-size:12px;
   font-weight:700;
   color:#1A0A2E;
-  margin-bottom:2px;
+  margin-bottom:3px;
 }
 .pdf-park-desc{
-  font-size:9px;
+  font-size:9.5px;
   color:#666;
-  line-height:1.45;
+  line-height:1.5;
 }
 
 /* Hotel card */
@@ -1390,9 +1390,9 @@ body.edit-on .price-edit-panel{display:flex;flex-wrap:wrap;align-items:center;}
   margin-bottom:10px;
 }
 .pdf-hotel-img{
-  width:120px;
-  min-width:120px;
-  height:80px;
+  width:150px;
+  min-width:150px;
+  height:100px;
   background-size:cover;
   background-position:center;
   display:block;
@@ -1403,7 +1403,7 @@ body.edit-on .price-edit-panel{display:flex;flex-wrap:wrap;align-items:center;}
   display:flex;
   flex-direction:column;
   justify-content:center;
-  gap:2px;
+  gap:4px;
 }
 .pdf-hotel-name{
   font-family:'Playfair Display',serif;
@@ -2785,12 +2785,12 @@ function buildPDFSummary(){
 
   html += '</div>'; // fin grid cards
 
-  // Nota de servicios que se abonan por separado (siempre visible)
-  html += '<div style="background:#F8F8FF;border:1.5px dashed #C8B0DC;border-radius:8px;padding:9px 13px;font-size:9px;color:#555;margin-bottom:10px;line-height:1.7;">';
-  html += '<strong style="color:#5A3080;">ℹ️ Se abonan por separado al momento de la reserva y no forman parte del presupuesto:</strong><br>';
-  html += '⚡ <strong>Lightning Lane</strong> &nbsp;·&nbsp; ✨ <strong>Bibbidi Bobbidi Boutique</strong> &nbsp;·&nbsp; 🍽️ <strong>Comida con Personajes</strong>';
-  if(_hasDis){ html += ' &nbsp;·&nbsp; 🚢 <strong>Crucero Disney</strong>'; }
-  html += '</div>';
+  // Si hay ambos destinos, agregar nota aparte de LL/Crucero
+  if(_hasDis && _hasUni){
+    html += '<div style="background:#F8F8FF;border:1.5px dashed #C8B0DC;border-radius:8px;padding:8px 12px;font-size:9px;color:#555;margin-bottom:10px;">';
+    html += 'ℹ️ <strong>Lightning Lane</strong> y <strong>Crucero Disney</strong> se abonan de forma independiente y no impactan en las cuotas del paquete principal.';
+    html += '</div>';
+  }
 
   // Disclaimer precios
   html += '<div style="background:#FBF7E8;border:1.5px solid #E8D8A0;border-left:4px solid #C8A84B;border-radius:8px;padding:8px 12px;font-size:9px;color:#5A4010;line-height:1.7;">';
@@ -3031,8 +3031,6 @@ function serializarPresupuesto(){
   var budget = {
     // Cliente
     nombre:   d.nom || (clienteEl ? clienteEl.textContent.trim() : ''),
-    wa:       d.wa  || '',
-    email:    d.email || '',
     nAdultos: parseInt(d.nAdu) || 2,
     nMenores: parseInt(d.nMen) || 0,
     edades:   d.edades || [],
@@ -3114,19 +3112,59 @@ function _generarPDFConJsPDF(btn){
   var el = document.getElementById('pdf-summary');
   if(!el){ if(btn){btn.textContent='🖨️ Exportar PDF';btn.disabled=false;} return; }
 
-  var RENDER_W = 800;
+  var RENDER_W = 800; // ancho fijo de render (debe coincidir con max-width del #pdf-summary)
 
-  // Mostrar fuera de pantalla
+  // Mostrar temporalmente para captura
   var prevDisplay = el.style.display;
+  var prevPosition = el.style.position;
+  var prevTop = el.style.top;
+  var prevLeft = el.style.left;
+  var prevWidth = el.style.width;
+  var prevMaxWidth = el.style.maxWidth;
+  var prevZIndex = el.style.zIndex;
+
   el.style.display = 'block';
   el.style.position = 'fixed';
   el.style.top = '-99999px';
   el.style.left = '0';
   el.style.width = RENDER_W + 'px';
+  el.style.maxWidth = RENDER_W + 'px';
   el.style.zIndex = '-1';
 
+  function restore(){
+    el.style.display = prevDisplay;
+    el.style.position = prevPosition;
+    el.style.top = prevTop;
+    el.style.left = prevLeft;
+    el.style.width = prevWidth;
+    el.style.maxWidth = prevMaxWidth;
+    el.style.zIndex = prevZIndex;
+  }
+
+  // Escanea píxel a píxel buscando la fila más blanca en ventana ±windowPx
+  function getBestCutY(data, canvasW, nominalY, windowPx){
+    var best = nominalY;
+    var bestWhite = -1;
+    var from = Math.max(0, nominalY - windowPx);
+    var to   = Math.min(Math.floor(data.length / (canvasW * 4)) - 1, nominalY + windowPx);
+    for(var y = from; y <= to; y++){
+      var sum = 0;
+      var cols = Math.min(canvasW, 80); // samplear 80 columnas distribuidas
+      var step = Math.max(1, Math.floor(canvasW / cols));
+      var count = 0;
+      for(var x = 0; x < canvasW; x += step){
+        var idx = (y * canvasW + x) * 4;
+        sum += (data[idx] + data[idx+1] + data[idx+2]) / 3;
+        count++;
+      }
+      var whiteness = sum / count;
+      if(whiteness > bestWhite){ bestWhite = whiteness; best = y; }
+    }
+    return best;
+  }
+
+  // Esperar fuentes y layout
   setTimeout(function(){
-    // Capturar el documento completo de una vez
     html2canvas(el, {
       scale: 2,
       useCORS: true,
@@ -3135,109 +3173,78 @@ function _generarPDFConJsPDF(btn){
       width: RENDER_W,
       windowWidth: RENDER_W,
       logging: false
-    }).then(function(fullCanvas){
-
-      // Restaurar visibilidad
-      el.style.display = prevDisplay;
-      el.style.position = '';
-      el.style.top = '';
-      el.style.left = '';
-      el.style.width = '';
-      el.style.zIndex = '';
+    }).then(function(canvas){
+      restore();
 
       var { jsPDF } = window.jspdf;
+      // Usar puntos (pt) para máxima precisión
       var pdf = new jsPDF({ orientation:'portrait', unit:'pt', format:'a4' });
-
-      var pageW_pt  = pdf.internal.pageSize.getWidth();   // 595.28pt
-      var pageH_pt  = pdf.internal.pageSize.getHeight();  // 841.89pt
+      var pageW_pt = pdf.internal.pageSize.getWidth();   // 595.28pt
+      var pageH_pt = pdf.internal.pageSize.getHeight();  // 841.89pt
       var margin_pt = 22;
-      var printW_pt = pageW_pt - margin_pt * 2;
-      var printH_pt = pageH_pt - margin_pt * 2;
+      var printW_pt = pageW_pt - margin_pt * 2;          // ancho imprimible en pt
 
-      var canvasW   = fullCanvas.width;   // RENDER_W * scale
-      var canvasH   = fullCanvas.height;
-      var pxPerPt   = canvasW / printW_pt;
-      var pageH_px  = Math.floor(printH_pt * pxPerPt);
+      var canvasW = canvas.width;   // RENDER_W * scale = 1600px
+      var canvasH = canvas.height;
 
-      // Obtener las secciones y sus posiciones relativas al contenedor
-      var sections = el.querySelectorAll('.pdf-section, .pdf-header-block, .pdf-finance-block, .pdf-benefits-block, .pdf-footer-block');
-      
-      // Si no hay secciones marcadas, usar el método de corte inteligente:
-      // detectar filas blancas (sin contenido) cerca de cada corte de página
-      var totalH_pt  = canvasH / pxPerPt;
-      var numPages   = Math.ceil(totalH_pt / printH_pt);
+      // Ratio: cuántos px de canvas equivalen a 1pt
+      var pxPerPt = canvasW / printW_pt;
 
-      // Para cada página buscar el mejor punto de corte (fila más blanca)
-      // en una ventana de ±80px alrededor del corte matemático
-      function getBestCutY(canvas, nominalY_px, windowPx){
-        var ctx = canvas.getContext('2d');
-        var bestY  = nominalY_px;
-        var bestScore = -1;
-        var start = Math.max(0, nominalY_px - windowPx);
-        var end   = Math.min(canvas.height - 1, nominalY_px + windowPx);
-        for(var y = start; y <= end; y++){
-          var data = ctx.getImageData(0, y, canvas.width, 1).data;
-          var whiteness = 0;
-          for(var i = 0; i < data.length; i += 4){
-            whiteness += (data[i] + data[i+1] + data[i+2]) / 3;
-          }
-          whiteness = whiteness / (canvas.width);
-          if(whiteness > bestScore){
-            bestScore = whiteness;
-            bestY = y;
-          }
-        }
-        return bestY;
+      var pageH_px  = (pageH_pt - margin_pt * 2) * pxPerPt; // alto de página en px de canvas
+      var windowPx  = Math.round(30 * pxPerPt);              // ventana de búsqueda ±30pt
+
+      // Obtener datos de píxeles para análisis de whiteness
+      var ctx = canvas.getContext('2d');
+      var pixelData = ctx.getImageData(0, 0, canvasW, canvasH).data;
+
+      // Calcular puntos de corte con smart cut
+      var cuts = [0]; // siempre empieza en 0
+      var pos = 0;
+      while(pos + pageH_px < canvasH){
+        var nominalY = Math.round(pos + pageH_px);
+        var bestY    = getBestCutY(pixelData, canvasW, nominalY, windowPx);
+        cuts.push(bestY);
+        pos = bestY;
       }
+      cuts.push(canvasH);
 
-      // Calcular puntos de corte óptimos
-      var cutPoints = [0];
-      for(var p = 1; p < numPages; p++){
-        var nominalY = Math.round(p * pageH_px);
-        if(nominalY >= canvasH) break;
-        var bestY = getBestCutY(fullCanvas, nominalY, Math.round(pxPerPt * 30)); // ventana ±30pt
-        cutPoints.push(bestY);
-      }
-      cutPoints.push(canvasH);
-
-      // Generar páginas usando los puntos de corte óptimos
-      for(var i = 0; i < cutPoints.length - 1; i++){
+      // Generar páginas
+      for(var i = 0; i < cuts.length - 1; i++){
         if(i > 0) pdf.addPage();
-        var srcY   = cutPoints[i];
-        var srcH   = cutPoints[i+1] - srcY;
-        if(srcH <= 0) continue;
+
+        var y0 = cuts[i];
+        var y1 = cuts[i+1];
+        var sliceH_px = y1 - y0;
 
         var pageCanvas = document.createElement('canvas');
         pageCanvas.width  = canvasW;
-        pageCanvas.height = srcH;
-        var ctx = pageCanvas.getContext('2d');
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, canvasW, srcH);
-        ctx.drawImage(fullCanvas, 0, srcY, canvasW, srcH, 0, 0, canvasW, srcH);
+        pageCanvas.height = sliceH_px;
+        var pctx = pageCanvas.getContext('2d');
+        pctx.fillStyle = '#ffffff';
+        pctx.fillRect(0, 0, canvasW, sliceH_px);
+        pctx.drawImage(canvas, 0, y0, canvasW, sliceH_px, 0, 0, canvasW, sliceH_px);
 
-        var sliceH_pt = srcH / pxPerPt;
         var imgData   = pageCanvas.toDataURL('image/jpeg', 0.93);
+        var sliceH_pt = sliceH_px / pxPerPt;
         pdf.addImage(imgData, 'JPEG', margin_pt, margin_pt, printW_pt, sliceH_pt);
       }
 
+      // Nombre del archivo
       var clienteEl = document.getElementById('hdr-cliente');
-      var apellido  = clienteEl ? clienteEl.textContent.trim().replace(/^Familia\s*/i,'').replace(/\s+/g,'_') : 'Cliente';
-      pdf.save('Presupuesto_ConMagui_' + apellido + '.pdf');
-      if(btn){ btn.textContent = '🖨️ Exportar PDF'; btn.disabled = false; }
+      var apellido = clienteEl ? clienteEl.textContent.trim().replace(/^Familia\s*/i,'').replace(/\s+/g,'_') : 'Cliente';
+      var filename = 'Presupuesto_ConMagui_' + apellido + '.pdf';
+      pdf.save(filename);
 
+      if(btn){ btn.textContent = '🖨️ Exportar PDF'; btn.disabled = false; }
     }).catch(function(err){
       console.error('Error generando PDF:', err);
-      el.style.display = prevDisplay;
-      el.style.position = '';
-      el.style.top = '';
-      el.style.left = '';
-      el.style.width = '';
-      el.style.zIndex = '';
+      restore();
       if(btn){ btn.textContent = '🖨️ Exportar PDF'; btn.disabled = false; }
       alert('Error al generar el PDF. Intentá de nuevo.');
     });
   }, 400);
-}</script>
+}
+</script>
 <footer style="background:#0B1628;padding:28px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-top:40px;print-color-adjust:exact;-webkit-print-color-adjust:exact;">
   <div style="display:flex;align-items:center;gap:12px;">
     <svg width="36" height="26" viewBox="0 0 52 38" fill="none" xmlns="http://www.w3.org/2000/svg">
