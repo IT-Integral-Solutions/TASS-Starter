@@ -3114,10 +3114,9 @@ function _generarPDFConJsPDF(btn){
   var el = document.getElementById('pdf-summary');
   if(!el){ if(btn){btn.textContent='🖨️ Exportar PDF';btn.disabled=false;} return; }
 
-  // Ancho de render fijo: debe coincidir con max-width del #pdf-summary (800px)
   var RENDER_W = 800;
 
-  // Mostrar fuera de pantalla para captura
+  // Mostrar fuera de pantalla
   var prevDisplay = el.style.display;
   el.style.display = 'block';
   el.style.position = 'fixed';
@@ -3127,6 +3126,7 @@ function _generarPDFConJsPDF(btn){
   el.style.zIndex = '-1';
 
   setTimeout(function(){
+    // Capturar el documento completo de una vez
     html2canvas(el, {
       scale: 2,
       useCORS: true,
@@ -3135,8 +3135,9 @@ function _generarPDFConJsPDF(btn){
       width: RENDER_W,
       windowWidth: RENDER_W,
       logging: false
-    }).then(function(canvas){
-      // Restaurar
+    }).then(function(fullCanvas){
+
+      // Restaurar visibilidad
       el.style.display = prevDisplay;
       el.style.position = '';
       el.style.top = '';
@@ -3147,48 +3148,83 @@ function _generarPDFConJsPDF(btn){
       var { jsPDF } = window.jspdf;
       var pdf = new jsPDF({ orientation:'portrait', unit:'pt', format:'a4' });
 
-      // A4 en puntos: 595.28 x 841.89 pt
-      var pageW_pt = pdf.internal.pageSize.getWidth();
-      var pageH_pt = pdf.internal.pageSize.getHeight();
-      var margin_pt = 20; // ~7mm
+      var pageW_pt  = pdf.internal.pageSize.getWidth();   // 595.28pt
+      var pageH_pt  = pdf.internal.pageSize.getHeight();  // 841.89pt
+      var margin_pt = 22;
       var printW_pt = pageW_pt - margin_pt * 2;
+      var printH_pt = pageH_pt - margin_pt * 2;
 
-      // canvas está en px a scale=2 → canvas.width = RENDER_W * 2
-      var canvasW = canvas.width;   // px
-      var canvasH = canvas.height;  // px
+      var canvasW   = fullCanvas.width;   // RENDER_W * scale
+      var canvasH   = fullCanvas.height;
+      var pxPerPt   = canvasW / printW_pt;
+      var pageH_px  = Math.floor(printH_pt * pxPerPt);
 
-      // Ratio: cuántos px corresponden a 1 pt de impresión
-      var pxPerPt = canvasW / printW_pt;
+      // Obtener las secciones y sus posiciones relativas al contenedor
+      var sections = el.querySelectorAll('.pdf-section, .pdf-header-block, .pdf-finance-block, .pdf-benefits-block, .pdf-footer-block');
+      
+      // Si no hay secciones marcadas, usar el método de corte inteligente:
+      // detectar filas blancas (sin contenido) cerca de cada corte de página
+      var totalH_pt  = canvasH / pxPerPt;
+      var numPages   = Math.ceil(totalH_pt / printH_pt);
 
-      // Alto total del documento en puntos
-      var totalH_pt = canvasH / pxPerPt;
-      var pageContentH_pt = pageH_pt - margin_pt * 2;
-      var numPages = Math.ceil(totalH_pt / pageContentH_pt);
+      // Para cada página buscar el mejor punto de corte (fila más blanca)
+      // en una ventana de ±80px alrededor del corte matemático
+      function getBestCutY(canvas, nominalY_px, windowPx){
+        var ctx = canvas.getContext('2d');
+        var bestY  = nominalY_px;
+        var bestScore = -1;
+        var start = Math.max(0, nominalY_px - windowPx);
+        var end   = Math.min(canvas.height - 1, nominalY_px + windowPx);
+        for(var y = start; y <= end; y++){
+          var data = ctx.getImageData(0, y, canvas.width, 1).data;
+          var whiteness = 0;
+          for(var i = 0; i < data.length; i += 4){
+            whiteness += (data[i] + data[i+1] + data[i+2]) / 3;
+          }
+          whiteness = whiteness / (canvas.width);
+          if(whiteness > bestScore){
+            bestScore = whiteness;
+            bestY = y;
+          }
+        }
+        return bestY;
+      }
 
-      for(var i = 0; i < numPages; i++){
+      // Calcular puntos de corte óptimos
+      var cutPoints = [0];
+      for(var p = 1; p < numPages; p++){
+        var nominalY = Math.round(p * pageH_px);
+        if(nominalY >= canvasH) break;
+        var bestY = getBestCutY(fullCanvas, nominalY, Math.round(pxPerPt * 30)); // ventana ±30pt
+        cutPoints.push(bestY);
+      }
+      cutPoints.push(canvasH);
+
+      // Generar páginas usando los puntos de corte óptimos
+      for(var i = 0; i < cutPoints.length - 1; i++){
         if(i > 0) pdf.addPage();
-
-        var srcY_px = Math.round(i * pageContentH_pt * pxPerPt);
-        var srcH_px = Math.round(Math.min(pageContentH_pt * pxPerPt, canvasH - srcY_px));
-        if(srcH_px <= 0) break;
+        var srcY   = cutPoints[i];
+        var srcH   = cutPoints[i+1] - srcY;
+        if(srcH <= 0) continue;
 
         var pageCanvas = document.createElement('canvas');
         pageCanvas.width  = canvasW;
-        pageCanvas.height = srcH_px;
+        pageCanvas.height = srcH;
         var ctx = pageCanvas.getContext('2d');
         ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, canvasW, srcH_px);
-        ctx.drawImage(canvas, 0, srcY_px, canvasW, srcH_px, 0, 0, canvasW, srcH_px);
+        ctx.fillRect(0, 0, canvasW, srcH);
+        ctx.drawImage(fullCanvas, 0, srcY, canvasW, srcH, 0, 0, canvasW, srcH);
 
-        var imgData = pageCanvas.toDataURL('image/jpeg', 0.92);
-        var sliceH_pt = srcH_px / pxPerPt;
+        var sliceH_pt = srcH / pxPerPt;
+        var imgData   = pageCanvas.toDataURL('image/jpeg', 0.93);
         pdf.addImage(imgData, 'JPEG', margin_pt, margin_pt, printW_pt, sliceH_pt);
       }
 
       var clienteEl = document.getElementById('hdr-cliente');
-      var apellido = clienteEl ? clienteEl.textContent.trim().replace(/^Familia\s*/i,'').replace(/\s+/g,'_') : 'Cliente';
+      var apellido  = clienteEl ? clienteEl.textContent.trim().replace(/^Familia\s*/i,'').replace(/\s+/g,'_') : 'Cliente';
       pdf.save('Presupuesto_ConMagui_' + apellido + '.pdf');
       if(btn){ btn.textContent = '🖨️ Exportar PDF'; btn.disabled = false; }
+
     }).catch(function(err){
       console.error('Error generando PDF:', err);
       el.style.display = prevDisplay;
@@ -3201,8 +3237,7 @@ function _generarPDFConJsPDF(btn){
       alert('Error al generar el PDF. Intentá de nuevo.');
     });
   }, 400);
-}
-</script>
+}</script>
 <footer style="background:#0B1628;padding:28px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-top:40px;print-color-adjust:exact;-webkit-print-color-adjust:exact;">
   <div style="display:flex;align-items:center;gap:12px;">
     <svg width="36" height="26" viewBox="0 0 52 38" fill="none" xmlns="http://www.w3.org/2000/svg">
