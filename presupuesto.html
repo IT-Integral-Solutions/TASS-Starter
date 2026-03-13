@@ -2785,12 +2785,12 @@ function buildPDFSummary(){
 
   html += '</div>'; // fin grid cards
 
-  // Si hay ambos destinos, agregar nota aparte de LL/Crucero
-  if(_hasDis && _hasUni){
-    html += '<div style="background:#F8F8FF;border:1.5px dashed #C8B0DC;border-radius:8px;padding:8px 12px;font-size:9px;color:#555;margin-bottom:10px;">';
-    html += 'ℹ️ <strong>Lightning Lane</strong> y <strong>Crucero Disney</strong> se abonan de forma independiente y no impactan en las cuotas del paquete principal.';
-    html += '</div>';
-  }
+  // Nota de servicios que se abonan por separado (siempre visible)
+  html += '<div style="background:#F8F8FF;border:1.5px dashed #C8B0DC;border-radius:8px;padding:9px 13px;font-size:9px;color:#555;margin-bottom:10px;line-height:1.7;">';
+  html += '<strong style="color:#5A3080;">ℹ️ Se abonan por separado al momento de la reserva y no forman parte del presupuesto:</strong><br>';
+  html += '⚡ <strong>Lightning Lane</strong> &nbsp;·&nbsp; ✨ <strong>Bibbidi Bobbidi Boutique</strong> &nbsp;·&nbsp; 🍽️ <strong>Comida con Personajes</strong>';
+  if(_hasDis){ html += ' &nbsp;·&nbsp; 🚢 <strong>Crucero Disney</strong>'; }
+  html += '</div>';
 
   // Disclaimer precios
   html += '<div style="background:#FBF7E8;border:1.5px solid #E8D8A0;border-left:4px solid #C8A84B;border-radius:8px;padding:8px 12px;font-size:9px;color:#5A4010;line-height:1.7;">';
@@ -3126,12 +3126,12 @@ function _generarPDFConJsPDF(btn){
   // Esperar fuentes y layout
   setTimeout(function(){
     html2canvas(el, {
-      scale: 2,
+      scale: 1.8,
       useCORS: true,
       allowTaint: true,
       backgroundColor: '#ffffff',
-      width: 900,
-      windowWidth: 900,
+      width: 860,
+      windowWidth: 860,
       logging: false
     }).then(function(canvas){
       // Restaurar estado original
@@ -3147,7 +3147,7 @@ function _generarPDFConJsPDF(btn){
 
       var pageW = pdf.internal.pageSize.getWidth();   // 210mm
       var pageH = pdf.internal.pageSize.getHeight();  // 297mm
-      var margin = 10; // mm
+      var margin = 6; // mm — reducido para aprovechar más espacio de página
       var printW = pageW - margin * 2;
 
       var imgW = canvas.width;
