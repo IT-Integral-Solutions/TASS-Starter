@@ -752,12 +752,12 @@ textarea{resize:vertical;min-height:70px;line-height:1.6}
       nombre_cliente: nom,
       wa_cliente: wa,
       email_cliente: email || '(no ingresó)',
-      destino: viajeTxt,
-      mes: viajerosTxt,
-      viajeros: alojamientoTxt,
-      categoria_hotel: extrasTxt,
-      extras: 'Link directo al presupuesto: '+presupURL,
-      comentarios: contactoTxt,
+      destino: dest,
+      mes: mes + (fIn && fOut ? ' ('+fIn+' al '+fOut+')' : ''),
+      viajeros: nAdu+' adultos, '+nMen+' menores'+(edArr.length?' ('+edArr.join(', ')+')':''),
+      categoria_hotel: catHotel || '(no especificó)',
+      extras: extras,
+      comentarios: com || '(sin comentarios)',
       presup_link: presupURL,
       resumen_completo: t
     }).then(function(){
