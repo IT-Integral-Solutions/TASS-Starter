@@ -38,7 +38,7 @@ body{background:#F0EBE5;font-family:'Montserrat',sans-serif;min-height:100vh;}
 .tb-info{font-size:9.5px;color:rgba(255,255,255,.35);font-style:italic;margin-left:auto;}
 
 /* ─── WRAPPER ─────────────────────────────────── */
-#doc-wrap{padding:68px 20px 60px;display:flex;justify-content:center;}
+#doc-wrap{padding:68px 20px 60px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:14px;}
 .presupuesto{width:960px;max-width:100%;background:white;
   box-shadow:0 20px 80px rgba(42,26,62,.13),0 4px 20px rgba(0,0,0,.06);border-radius:20px;overflow:hidden;}
 
@@ -2249,42 +2249,77 @@ document.addEventListener('DOMContentLoaded',function(){
   if(hasDis && hasUni) destIcons += ' + ';
   if(hasUni) destIcons += '🌐 Universal';
 
+  var contactoItems = [
+    '📱 ' + (d.wa || '(sin WhatsApp)'),
+    '📧 ' + (d.email || '(sin email)'),
+    '📍 ' + (d.como || '(sin origen)')
+  ];
+  var detalleViaje = [
+    d.diasTotal ? '⏱️ '+d.diasTotal : '',
+    d.diasDis ? '🏰 Disney: '+d.diasDis : '',
+    d.diasUni ? '🌐 Universal: '+d.diasUni : '',
+    d.flex ? '📆 '+d.flex : '',
+    d.presup ? '💵 '+d.presup : ''
+  ].filter(Boolean);
+  var perfilItems = [
+    d.grupo ? '👨‍👩‍👧 '+d.grupo : '',
+    d.primera ? '✨ '+d.primera : '',
+    d.pas ? '🛂 '+d.pas : '',
+    d.visa ? '🇺🇸 '+d.visa : ''
+  ].filter(Boolean);
+
   var banner = document.createElement('div');
   banner.id = 'client-banner';
+  banner.style.cssText = 'width:960px;max-width:100%;margin:0 auto 14px;';
   banner.innerHTML =
-    '<div style="background:linear-gradient(135deg,#1A0A2E,#2A1A3E);color:#fff;padding:16px 24px 14px;font-family:Montserrat,sans-serif;border-bottom:3px solid #C8A84B;position:relative">'+
-    '<div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px">'+
-
-    // Left: client info
-    '<div>'+
-      '<div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:5px">📋 Consulta recibida · '+(d.ts||'')+'</div>'+
-      '<div style="font-size:20px;font-weight:800;letter-spacing:-.3px">'+destIcons+' &nbsp;Familia '+apellido+'</div>'+
-      '<div style="margin-top:4px;color:rgba(255,255,255,.75);font-size:12px">'+vStr+'</div>'+
-      '<div style="margin-top:5px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">'+
-        '<span style="color:'+tempColor+';font-weight:700;font-size:12px">'+tempLabel+'</span>'+
-        '<span style="color:rgba(255,255,255,.55);font-size:11px">'+periodo+'</span>'+
+    '<div style="background:linear-gradient(135deg,#1A0A2E,#2A1A3E);color:#fff;padding:16px 24px 14px;font-family:Montserrat,sans-serif;border:1px solid rgba(200,168,75,.25);border-bottom:3px solid #C8A84B;border-radius:18px;box-shadow:0 14px 34px rgba(26,10,46,.18);position:relative">'+
+    '<div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:14px">'+
+      '<div style="flex:1 1 380px;min-width:280px">'+
+        '<div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:5px">📋 Consulta recibida · '+(d.ts||'')+'</div>'+
+        '<div style="font-size:20px;font-weight:800;letter-spacing:-.3px;line-height:1.15">'+destIcons+' &nbsp;Familia '+apellido+'</div>'+
+        '<div style="margin-top:5px;color:rgba(255,255,255,.78);font-size:12px">'+vStr+'</div>'+
+        '<div style="margin-top:6px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">'+
+          '<span style="color:'+tempColor+';font-weight:700;font-size:12px">'+tempLabel+'</span>'+
+          '<span style="color:rgba(255,255,255,.62);font-size:11px">'+periodo+'</span>'+
+        '</div>'+
+        '<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px">'+
+          contactoItems.map(function(item){
+            return '<span style="display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);font-size:10px;color:rgba(255,255,255,.88)">'+item+'</span>';
+          }).join('')+
+        '</div>'+
+      '</div>'+
+      '<div style="flex:1 1 340px;min-width:280px;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px">'+
+        '<div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px">'+
+          '<div style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:8px">Viaje</div>'+
+          detalleViaje.map(function(item){
+            return '<div style="font-size:10.5px;color:rgba(255,255,255,.86);margin-bottom:4px">'+item+'</div>';
+          }).join('')+
+        '</div>'+
+        '<div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px">'+
+          '<div style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:8px">Preferencias</div>'+
+          '<div style="font-size:11px;margin-bottom:4px">🏨 <strong style="color:#E8C96A">'+(d.catHotel||'(sin categoría)')+'</strong></div>'+
+          (d.hotelDis?'<div style="font-size:10.5px;color:rgba(255,255,255,.65);margin-bottom:3px">Disney: '+d.hotelDis+'</div>':'')+
+          (d.hotelUni?'<div style="font-size:10.5px;color:rgba(255,255,255,.65);margin-bottom:3px">Universal: '+d.hotelUni+'</div>':'')+
+          perfilItems.map(function(item){
+            return '<div style="font-size:10.5px;color:rgba(255,255,255,.72);margin-bottom:3px">'+item+'</div>';
+          }).join('')+
+          (wantsDining?'<div style="font-size:10.5px;margin-top:4px">🍽️ <span style="color:#A8E0C0">Quiere plan de comidas</span></div>':'')+
+          (wantsCrucero?'<div style="font-size:10.5px;margin-top:4px">🚢 <span style="color:#A8E0C0">Quiere cotizar crucero</span></div>':'')+
+          (maybeCrucero?'<div style="font-size:10.5px;margin-top:4px">🚢 <span style="color:#E8C96A">Le interesa el crucero</span></div>':'')+
+          (d.transporte?'<div style="font-size:10.5px;color:rgba(255,255,255,.6);margin-top:4px">🚌 '+d.transporte+'</div>':'')+
+        '</div>'+
       '</div>'+
     '</div>'+
-
-    // Right: preferences
-    '<div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:12px 16px;min-width:200px">'+
-      '<div style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:8px">Preferencias del cliente</div>'+
-      '<div style="font-size:11.5px;margin-bottom:3px">🏨 <strong style="color:#E8C96A">'+(d.catHotel||'')+'</strong></div>'+
-      (d.hotelDis?'<div style="font-size:10.5px;color:rgba(255,255,255,.65);margin-bottom:2px">Disney: '+d.hotelDis+'</div>':'')+
-      (d.hotelUni?'<div style="font-size:10.5px;color:rgba(255,255,255,.65);margin-bottom:2px">Universal: '+d.hotelUni+'</div>':'')+
-      (wantsDining?'<div style="font-size:10.5px;margin-top:4px">🍽️ <span style="color:#A8E0C0">Quiere plan de comidas</span></div>':'')+
-      (wantsCrucero?'<div style="font-size:10.5px;margin-top:4px">🚢 <span style="color:#A8E0C0">Quiere cotizar crucero</span></div>':'')+
-      (maybeCrucero?'<div style="font-size:10.5px;margin-top:4px">🚢 <span style="color:#E8C96A">Le interesa el crucero</span></div>':'')+
-      (d.transporte?'<div style="font-size:10.5px;color:rgba(255,255,255,.6);margin-top:4px">🚌 '+d.transporte+'</div>':'')+
-      (extrasHTML?'<div style="margin-top:6px">'+extrasHTML+'</div>':'')+
-    '</div>'+
-    '</div>'+
-
-    // Comments row
-    (d.com?'<div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.1);font-size:11px;color:rgba(255,255,255,.65)">💬 <em>"'+d.com+'"</em></div>':'')+
+    (extrasHTML?'<div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.08)"><div style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:7px">Extras solicitados</div><div>'+extrasHTML+'</div></div>':'')+
+    (d.com?'<div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.08);font-size:11px;color:rgba(255,255,255,.7)">💬 <em>"'+d.com+'"</em></div>':'')+
     '</div>';
 
-  document.body.insertBefore(banner, document.body.firstChild);
+  var docWrap = document.getElementById('doc-wrap');
+  if(docWrap){
+    docWrap.insertBefore(banner, docWrap.firstChild);
+  } else {
+    document.body.insertBefore(banner, document.body.firstChild);
+  }
 
   console.log('✅ Template pre-filled profundo para: Familia', apellido);
 })();

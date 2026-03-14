@@ -681,38 +681,52 @@ textarea{resize:vertical;min-height:70px;line-height:1.6}
     var edArr=[];
     for(var j=1;j<=nMen;j++){var ex=g('edad'+j);if(ex&&ex.value)edArr.push(ex.value+' años');}
     var edStr=edArr.length?' | Edades: '+edArr.join(', '):'';
+    var extrasList = checkedAll('extras');
+    var extras = extrasList.join(', ')||'Ninguno';
+    var fechasTxt = (fIn && fOut) ? (fIn+' al '+fOut) : (fIn || fOut || '(sin definir)');
+    var contactoTxt = [
+      'Nombre: '+nom,
+      'WhatsApp: '+wa,
+      'Email: '+(email || '(no ingresó)'),
+      'Dónde nos conoció: '+(como || '(no indicó)')
+    ].join('\n');
+    var viajeTxt = [
+      'Destino: '+dest,
+      'Duración total: '+diasTotal,
+      'Días Disney: '+(diasDis || '(no indicó)'),
+      'Días Universal: '+(diasUni || '(no indicó)'),
+      'Mes aproximado: '+mes,
+      'Fechas: '+fechasTxt,
+      'Flexibilidad fechas: '+flex,
+      'Presupuesto estimado: '+(presup || '(no indicó)')
+    ].join('\n');
+    var viajerosTxt = [
+      'Viajeros: '+nAdu+' adultos, '+nMen+' menores'+(edArr.length?' ('+edArr.join(', ')+')':''),
+      'Tipo de grupo: '+grupo,
+      'Primera vez: '+primera,
+      'Pasaporte: '+pas,
+      'Visa USA: '+visa
+    ].join('\n');
+    var alojamientoTxt = [
+      'Hotel Disney: '+hotelDis,
+      'Hotel Universal: '+hotelUni,
+      'Categoría de hotel: '+catHotel,
+      'Crucero Disney: '+crucero,
+      'Transporte: '+transporte
+    ].join('\n');
+    var extrasTxt = [
+      'Extras solicitados: '+extras,
+      'Comentarios: '+(com || '(sin comentarios)')
+    ].join('\n');
 
     // ── Mensaje completo para MAGUI (con link de presupuesto) ──────────
     var t='🏰 NUEVA CONSULTA - Con Magui a Disney\n';
     t+='━━━━━━━━━━━━━━━━━━━━━━\n\n';
-    t+='👤 *Nombre:* '+nom+'\n';
-    t+='📱 *WhatsApp:* '+wa+'\n';
-    if(email)t+='📧 *Email:* '+email+'\n';
-    if(como)t+='📍 *Nos encontró por:* '+como+'\n';
-    t+='\n🎯 *DESTINO Y FECHAS*\n';
-    t+='Destino: '+dest+'\n';
-    t+='Duración total: '+diasTotal+'\n';
-    if(diasDis)t+='Días Disney: '+diasDis+'\n';
-    if(diasUni)t+='Días Universal: '+diasUni+'\n';
-    t+='Mes: '+mes+'\n';
-    if(fIn)t+='Check-in: '+fIn+'\n';
-    if(fOut)t+='Check-out: '+fOut+'\n';
-    t+='Flexibilidad fechas: '+flex+'\n';
-    if(presup)t+='Presupuesto estimado: '+presup+'\n';
-    t+='\n👨‍👩‍👧 *VIAJEROS*\n';
-    t+=nAdu+' adultos, '+nMen+' menores'+edStr+'\n';
-    t+='Tipo de grupo: '+grupo+'\n';
-    t+='Primera vez: '+primera+'\n';
-    t+='Pasaporte: '+pas+'\n';
-    t+='Visa USA: '+visa+'\n';
-    t+='\n🏨 *ALOJAMIENTO Y EXTRAS*\n';
-    t+='Hotel Disney: '+hotelDis+'\n';
-    t+='Hotel Universal: '+hotelUni+'\n';
-    t+='Categoría: '+catHotel+'\n';
-    t+='Crucero Disney: '+crucero+'\n';
-    t+='Extras: '+extras+'\n';
-    t+='Transporte: '+transporte+'\n';
-    if(com)t+='\n💬 *Comentarios:* '+com+'\n';
+    t+='👤 *CONTACTO*\n'+contactoTxt+'\n';
+    t+='\n🎯 *VIAJE*\n'+viajeTxt+'\n';
+    t+='\n👨‍👩‍👧 *VIAJEROS*\n'+viajerosTxt+'\n';
+    t+='\n🏨 *ALOJAMIENTO Y EXTRAS*\n'+alojamientoTxt+'\n';
+    t+='\n✨ *DETALLE FINAL*\n'+extrasTxt+'\n';
     t+='\n_Enviado desde formulario web conmaguiadisney_';
 
     // ── Build presupuesto URL ─────────────────────────────────────────
@@ -721,9 +735,11 @@ textarea{resize:vertical;min-height:70px;line-height:1.6}
       diasTotal: diasTotal, diasDis: diasDis, diasUni: diasUni,
       mes: mes, fIn: fIn, fOut: fOut,
       nAdu: nAdu, nMen: nMen, edades: edArr,
+      flex: flex, presup: presup, primera: primera,
+      pas: pas, visa: visa, como: como,
       grupo: grupo, hotelDis: hotelDis, hotelUni: hotelUni,
       catHotel: catHotel, crucero: crucero,
-      extras: checkedAll('extras'), transporte: transporte,
+      extras: extrasList, transporte: transporte,
       com: com, ts: new Date().toLocaleDateString('es-AR')
     };
     var pEncoded = btoa(unescape(encodeURIComponent(JSON.stringify(pData))));
@@ -736,12 +752,12 @@ textarea{resize:vertical;min-height:70px;line-height:1.6}
       nombre_cliente: nom,
       wa_cliente: wa,
       email_cliente: email || '(no ingresó)',
-      destino: dest,
-      mes: mes + (fIn ? ' ('+fIn+' – '+fOut+')' : ''),
-      viajeros: nAdu+' adultos, '+nMen+' menores'+edStr,
-      categoria_hotel: catHotel || '(no especificó)',
-      extras: extras,
-      comentarios: com || '(sin comentarios)',
+      destino: viajeTxt,
+      mes: viajerosTxt,
+      viajeros: alojamientoTxt,
+      categoria_hotel: extrasTxt,
+      extras: 'Link directo al presupuesto: '+presupURL,
+      comentarios: contactoTxt,
       presup_link: presupURL,
       resumen_completo: t
     }).then(function(){
