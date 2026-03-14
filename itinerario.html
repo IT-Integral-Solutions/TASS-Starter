@@ -388,7 +388,7 @@ function nombreHotel(segmento) {
   return 'hotel';
 }
 
-// Genera secuencia parque/descanso sin días de descanso cuando noDescanso=true
+// Genera secuencia parque/descanso. Puede forzarse sin descanso si un destino lo requiere.
 function generarSecuencia(parques, totalSlots, reglas, noDescanso) {
   const seq = [];
   let parkIdx = 0;
@@ -518,14 +518,13 @@ function generarDias(data, p) {
   }
   if (hasUni && uniNochesTotal > 0) {
     // El primer día de Universal: el agente va directo al parque (check-in fue el día anterior en el check-out Disney)
-    // días de parque Universal = noches (sin día de descanso para segmentos cortos)
+    // días de parque Universal = noches. La alternancia parque/descanso la define la estrategia del agente.
     diasParqueUni = Math.max(1, uniNochesTotal - (tieneCrucero ? 0 : 0));
-    // Universal: no genera descansos (parámetro noDescanso=true para este segmento corto)
   }
 
   // Secuencias
   const seqDis = hasDis ? generarSecuencia(parquesDisney, diasParqueDis, cfgDis.reglas, false) : [];
-  const seqUni = hasUni ? generarSecuencia(parquesUniversal, diasParqueUni, cfgUni.reglas, true) : [];
+  const seqUni = hasUni ? generarSecuencia(parquesUniversal, diasParqueUni, cfgUni.reglas, false) : [];
 
   // ── CONSTRUCCIÓN DE DÍAS POR SEGMENTO ─────────────────────────────────────
 
@@ -566,7 +565,7 @@ function generarDias(data, p) {
     if (!hasDis) {
       dias.push(_diaBienvenida(fInUni, dias.length, hotelUniversal, cfgUni, false));
     }
-    // Días de parque Universal (sin descanso)
+    // Días de Universal según estrategia configurada (parques + descansos)
     for (let si = 0; si < seqUni.length; si++) {
       const fecha = hasDis ? addDays(fInUni, 1 + si) : addDays(fInUni, 1 + si);
       const item = seqUni[si];
