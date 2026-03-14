@@ -246,7 +246,8 @@ textarea{resize:vertical;min-height:70px;line-height:1.6}
             <option value="">¿Cuántos días?</option>
             <option>1 día</option><option>2 días</option><option>3 días</option>
             <option>4 días</option><option>5 días</option><option>6 días</option>
-            <option>7 días</option><option>No vamos a Disney</option>
+            <option>7 días</option><option>8 días</option><option>9 días</option>
+            <option>10 días</option><option>No vamos a Disney</option>
           </select>
         </div>
         <div class="fld">
@@ -254,7 +255,9 @@ textarea{resize:vertical;min-height:70px;line-height:1.6}
           <select id="dias-universal">
             <option value="">¿Cuántos días?</option>
             <option>1 día</option><option>2 días</option><option>3 días</option>
-            <option>4 días</option><option>No vamos a Universal</option>
+            <option>4 días</option><option>5 días</option><option>6 días</option>
+            <option>7 días</option><option>8 días</option><option>9 días</option>
+            <option>10 días</option><option>No vamos a Universal</option>
           </select>
         </div>
       </div>
@@ -287,12 +290,14 @@ textarea{resize:vertical;min-height:70px;line-height:1.6}
 
       <div class="row2">
         <div class="fld">
-          <label>Fecha de entrada <span class="opt">(si la tenés)</span></label>
-          <input type="date" id="fecha-in">
+          <label>Fecha de entrada <span class="req">*</span></label>
+          <input type="date" id="fecha-in" required>
+          <div class="ferr" id="e-fecha-in">Completá la fecha de entrada.</div>
         </div>
         <div class="fld">
-          <label>Fecha de salida <span class="opt">(si la tenés)</span></label>
-          <input type="date" id="fecha-out">
+          <label>Fecha de salida <span class="req">*</span></label>
+          <input type="date" id="fecha-out" required>
+          <div class="ferr" id="e-fecha-out">Completá la fecha de salida.</div>
         </div>
       </div>
 
@@ -494,6 +499,7 @@ textarea{resize:vertical;min-height:70px;line-height:1.6}
         <select id="sel-como">
           <option value="">Seleccioná...</option>
           <option>Instagram @conmaguiadisney</option>
+          <option>Pagina Web Con Magui a Dysney</option>
           <option>Me recomendó alguien</option>
           <option>Google</option>
           <option>TikTok</option>
@@ -600,8 +606,10 @@ textarea{resize:vertical;min-height:70px;line-height:1.6}
     if(sec===1){
       var d=document.querySelectorAll('input[name="dest"]:checked').length>0;
       var m=val('sel-mes')!=='';
-      err('e-dest',!d);err('e-mes',!m);
-      ok=d&&m;
+      var fIn=val('fecha-in')!=='';
+      var fOut=val('fecha-out')!=='';
+      err('e-dest',!d);err('e-mes',!m);err('e-fecha-in',!fIn);err('e-fecha-out',!fOut);
+      ok=d&&m&&fIn&&fOut;
     }
     if(sec===2){
       var g1=checked('grupo')!=='';
