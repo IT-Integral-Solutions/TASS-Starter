@@ -12,7 +12,7 @@
         "nombre": "Animal Kingdom",
         "nivel_cansancio": "bajo",
         "duracion_horas": 6,
-        "mejor_momento": "maÃÂ±ana",
+        "mejor_momento": "maÃÂÃÂ±ana",
         "activo": true,
         "notas": "",
         "tipo": "Temático"
@@ -22,7 +22,7 @@
         "nombre": "EPCOT",
         "nivel_cansancio": "alto",
         "duracion_horas": 10,
-        "mejor_momento": "maÃÂ±ana",
+        "mejor_momento": "maÃÂÃÂ±ana",
         "activo": true,
         "notas": "",
         "tipo": "Temático",
@@ -44,7 +44,7 @@
         "nombre": "Hollywood Studios",
         "nivel_cansancio": "medio",
         "duracion_horas": 8,
-        "mejor_momento": "maÃÂ±ana",
+        "mejor_momento": "maÃÂÃÂ±ana",
         "activo": true,
         "notas": "",
         "tipo": "Temático",
@@ -55,7 +55,7 @@
         "nombre": "Typhoon Lagoon",
         "nivel_cansancio": "bajo",
         "duracion_horas": 6,
-        "mejor_momento": "maÃÂ±ana",
+        "mejor_momento": "maÃÂÃÂ±ana",
         "activo": true,
         "notas": "",
         "tipo": "Acuático"
@@ -65,7 +65,7 @@
         "nombre": "Blizzard Beach",
         "nivel_cansancio": "bajo",
         "duracion_horas": 6,
-        "mejor_momento": "maÃÂ±ana",
+        "mejor_momento": "maÃÂÃÂ±ana",
         "activo": true,
         "notas": "",
         "tipo": "Acuático"
@@ -81,12 +81,12 @@
         "Disney Springs"
       ],
       "orden_parques": [
+        "typhoon_lagoon",
+        "magic_kingdom",
         "animal_kingdom",
         "epcot",
-        "typhoon_lagoon",
         "hollywood_studios",
-        "blizzard_beach",
-        "magic_kingdom"
+        "blizzard_beach"
       ],
       "notas_generales": ""
     }
@@ -98,7 +98,7 @@
         "nombre": "Islands of Adventure",
         "nivel_cansancio": "alto",
         "duracion_horas": 9,
-        "mejor_momento": "maÃÂ±ana",
+        "mejor_momento": "maÃÂÃÂ±ana",
         "activo": true,
         "notas": "",
         "tipo": "Temático",
@@ -109,18 +109,18 @@
         "nombre": "Universal Studios Florida",
         "nivel_cansancio": "medio",
         "duracion_horas": 8,
-        "mejor_momento": "maÃÂ±ana",
+        "mejor_momento": "maÃÂÃÂ±ana",
         "activo": true,
         "notas": "",
         "tipo": "Temático",
-        "intensidad": "alto"
+        "intensidad": "medio"
       },
       {
         "id": "epic_universe",
         "nombre": "Epic Universe",
         "nivel_cansancio": "alto",
         "duracion_horas": 10,
-        "mejor_momento": "maÃÂ±ana",
+        "mejor_momento": "maÃÂÃÂ±ana",
         "activo": true,
         "notas": "",
         "tipo": "Temático",
@@ -132,7 +132,7 @@
         "tipo": "Acuático",
         "nivel_cansancio": "bajo",
         "duracion_horas": 6,
-        "mejor_momento": "maÃÂ±ana",
+        "mejor_momento": "maÃÂÃÂ±ana",
         "activo": true,
         "notas": ""
       }
@@ -146,10 +146,10 @@
         "Compras"
       ],
       "orden_parques": [
-        "epic_universe",
-        "volcano_bay",
         "universal_studios",
-        "islands_of_adventure"
+        "islands_of_adventure",
+        "volcano_bay",
+        "epic_universe"
       ],
       "notas_generales": ""
     }
@@ -157,5 +157,5 @@
   "promociones_activas": [
     "Dining plan + Summer kids"
   ],
-  "ultimo_update": "2026-03-12T14:55:00.989Z"
+  "ultimo_update": "2026-03-14T20:34:51.619Z"
 }
