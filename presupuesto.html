@@ -1338,6 +1338,15 @@ body.edit-on .price-edit-panel{display:flex;flex-wrap:wrap;align-items:center;}
   margin:0 auto;
   background:white;
 }
+.pdf-page{
+  width:780px;
+  max-width:780px;
+  margin:0 auto;
+  background:white;
+  box-sizing:border-box;
+}
+.pdf-page + .pdf-page{ page-break-before:always; }
+.pdf-page-item{ break-inside:avoid; page-break-inside:avoid; }
 .pdf-page-break{ page-break-before:always; }
 
 /* Sección del resumen */
@@ -2425,7 +2434,7 @@ function buildPDFSummary(){
   var html = '';
 
   // ── HEADER PDF ────────────────────────────────────────────────────
-  html += '<div style="background:linear-gradient(135deg,#1A0A2E 0%,#2A1040 60%,#1A0A2E 100%);border-radius:14px;padding:28px 36px;margin-bottom:28px;display:flex;align-items:center;gap:24px;break-inside:avoid;">';
+  html += '<div class="pdf-page-item pdf-header-block" style="background:linear-gradient(135deg,#1A0A2E 0%,#2A1040 60%,#1A0A2E 100%);border-radius:14px;padding:28px 36px;margin-bottom:28px;display:flex;align-items:center;gap:24px;break-inside:avoid;">';
   if(logoSrc){
     html += '<img src="'+logoSrc+'" alt="Logo" style="width:80px;height:auto;flex-shrink:0;filter:drop-shadow(0 3px 14px rgba(200,168,75,.45));">';
   }
@@ -2444,7 +2453,7 @@ function buildPDFSummary(){
 
   // PARQUES DISNEY
   if(disneyParques.length > 0){
-    html += '<div class="pdf-section">';
+    html += '<div class="pdf-section pdf-page-item">';
     html += '<div class="pdf-section-title">';
     html += '<div class="st-icon" style="background:#FBF0F3;border:1.5px solid #F2D4DC;">🏰</div>';
     html += 'Parques Walt Disney World incluidos</div>';
@@ -2462,7 +2471,7 @@ function buildPDFSummary(){
 
   // HOTEL DISNEY
   if(hotelDisney){
-    html += '<div class="pdf-section">';
+    html += '<div class="pdf-section pdf-page-item">';
     html += '<div class="pdf-section-title">';
     html += '<div class="st-icon" style="background:#FBF0F3;border:1.5px solid #F2D4DC;">📋</div>';
     html += 'Alojamiento Disney</div>';
@@ -2487,7 +2496,7 @@ function buildPDFSummary(){
 
   // PARQUES UNIVERSAL
   if(uniParques.length > 0){
-    html += '<div class="pdf-section">';
+    html += '<div class="pdf-section pdf-page-item">';
     html += '<div class="pdf-section-title">';
     html += '<div class="st-icon" style="background:#EEF4FF;border:1.5px solid #C0D8F0;">🌐</div>';
     html += 'Parques Universal Orlando incluidos</div>';
@@ -2505,7 +2514,7 @@ function buildPDFSummary(){
 
   // HOTEL UNIVERSAL
   if(hotelUni){
-    html += '<div class="pdf-section">';
+    html += '<div class="pdf-section pdf-page-item">';
     html += '<div class="pdf-section-title">';
     html += '<div class="st-icon" style="background:#EEF4FF;border:1.5px solid #C0D8F0;">📋</div>';
     html += 'Alojamiento Universal</div>';
@@ -2530,7 +2539,7 @@ function buildPDFSummary(){
 
   // EXTRAS
   if(extras.length > 0){
-    html += '<div class="pdf-section">';
+    html += '<div class="pdf-section pdf-page-item">';
     html += '<div class="pdf-section-title">';
     html += '<div class="st-icon" style="background:#EDE0F5;border:1.5px solid #C8B0DC;">⭐</div>';
     html += 'Servicios adicionales incluidos</div>';
@@ -2561,7 +2570,7 @@ function buildPDFSummary(){
   });
 
   if(totalParts.length > 0){
-    html += '<div class="pdf-section">';
+    html += '<div class="pdf-section pdf-page-item">';
     html += '<div class="pdf-section-title"><div class="st-icon" style="background:#F0EAF8;border:1.5px solid #C8B0DC;">💰</div>Resumen de costos</div>';
     html += '<table style="width:100%;border-collapse:collapse;font-size:11px;">';
     totalParts.forEach(function(t){
@@ -2674,7 +2683,7 @@ function buildPDFSummary(){
   if(_saldo > 0 && _meses > 0) _cuotaMensual = Math.ceil(_saldo / _meses);
 
   // ── Render sección completa ────────────────────────────────────────────
-  html += '<div style="margin-top:18px;border-top:2px solid #E8D8A0;padding-top:14px;">';
+  html += '<div class="pdf-section pdf-page-item" style="margin-top:18px;border-top:2px solid #E8D8A0;padding-top:14px;">';
 
   // ── CUADRO HERO: CUOTAS (protagonista visual, cierre de venta) ────────
   var _limiteLabel = _hasDis ? '30 días antes' : '45 días antes';
@@ -2817,7 +2826,7 @@ function buildPDFSummary(){
   html += '</div>'; // fin sección reserva
 
   // ══ SECCIÓN: ¿POR QUÉ RESERVAR CONMIGO? ═══════════════════════════════
-  html += '<div style="margin-top:16px;">';
+  html += '<div class="pdf-section pdf-page-item" style="margin-top:16px;">';
   html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">';
   html += '<div style="background:#F0FFF5;border:1.5px solid #A8E0C0;border-radius:8px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:14px;">🎁</div>';
   html += '<div style="font-family:\'Playfair Display\',serif;font-size:13px;font-weight:700;color:#1A5A3A;">¿Por qué reservar conmigo?</div>';
@@ -2844,13 +2853,49 @@ function buildPDFSummary(){
   html += '</div>';
 
   // NOTA INFORMATIVA
-  html += '<div class="pdf-info-note">';
+  html += '<div class="pdf-info-note pdf-page-item">';
   html += '✨ Presupuesto elaborado por <strong>Magui · @conmaguiadisney</strong> — ';
   html += 'Authorized Disney Vacation Planner · Universal Authorized Travel Professional. ';
   html += 'Precios en USD, sujetos a disponibilidad al momento de la reserva. Asesoramiento sin costo.';
   html += '</div>';
 
   s.innerHTML = html;
+}
+
+function paginatePDFSummary(){
+  var s = document.getElementById('pdf-summary');
+  if(!s) return;
+
+  var items = Array.prototype.slice.call(s.children).filter(function(node){
+    return node.classList && node.classList.contains('pdf-page-item');
+  });
+  if(!items.length) return;
+
+  var pageWidthPx = 780;
+  var printableWidthMm = 210 - 24;
+  var printableHeightMm = 297 - 24;
+  var pageHeightPx = Math.floor(pageWidthPx * printableHeightMm / printableWidthMm);
+  var safeHeightPx = pageHeightPx - 12;
+
+  function createPage(){
+    var page = document.createElement('div');
+    page.className = 'pdf-page';
+    return page;
+  }
+
+  s.innerHTML = '';
+  var page = createPage();
+  s.appendChild(page);
+
+  items.forEach(function(item){
+    page.appendChild(item);
+    if(page.scrollHeight > safeHeightPx && page.children.length > 1){
+      page.removeChild(item);
+      page = createPage();
+      s.appendChild(page);
+      page.appendChild(item);
+    }
+  });
 }
 
 // ══ SERIALIZAR PRESUPUESTO → ITINERARIO ═══════════════════════════════
@@ -3172,31 +3217,26 @@ function exportarPDF(){
       el.style.maxWidth   = '780px';
       el.style.zIndex     = '-1';
 
+      paginatePDFSummary();
+
       if(btn) btn.textContent = '⏳ Cargando imágenes...';
 
       // Convertir todas las imágenes a base64 ANTES de capturar
       reemplazarImagenesDOM(el, function(){
         if(btn) btn.textContent = '⏳ Generando PDF...';
 
-        html2canvas(el, {
-          scale:       2,
-          useCORS:     true,
-          allowTaint:  false,
-          backgroundColor: '#ffffff',
-          width:       780,
-          windowWidth: 780,
-          logging:     false,
-          imageTimeout: 0,
-          onclone: function(doc) {
-            // En el clon, forzar que las imágenes roten con src base64
-            doc.querySelectorAll('#pdf-summary img').forEach(function(img){
-              var orig = el.querySelector('img[alt="'+img.alt+'"]');
-              if(orig && orig.src.startsWith('data:')) img.src = orig.src;
-            });
-          }
-        }).then(function(canvas){
+        var pages = Array.prototype.slice.call(el.querySelectorAll('.pdf-page'));
+        if(!pages.length) pages = [el];
 
-          // Restaurar estilos
+        var jsPDF = window.jspdf.jsPDF;
+        var pdf  = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+        var pgW  = pdf.internal.pageSize.getWidth();
+        var pgH  = pdf.internal.pageSize.getHeight();
+        var mX   = 12, mY = 12;
+        var printW = pgW - mX * 2;
+        var printH = pgH - mY * 2;
+
+        function restoreSummary(){
           el.style.display = 'none';
           el.style.position = '';
           el.style.top = '';
@@ -3204,53 +3244,51 @@ function exportarPDF(){
           el.style.width = '';
           el.style.maxWidth = '';
           el.style.zIndex = '';
+        }
 
-          var jsPDF = window.jspdf.jsPDF;
-          var pdf  = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
-          var pgW  = pdf.internal.pageSize.getWidth();   // 210mm
-          var pgH  = pdf.internal.pageSize.getHeight();  // 297mm
-          var mX   = 12, mY = 12;
-          var printW = pgW - mX * 2;
-
-          var cW  = canvas.width;
-          var cH  = canvas.height;
-          var ratio  = printW / cW;         // mm por px
-          var sliceH = Math.floor((pgH - mY * 2) / ratio); // px por página
-
-          var pageCount = Math.ceil(cH / sliceH);
-
-          for(var p = 0; p < pageCount; p++){
-            if(p > 0) pdf.addPage();
-            var y0 = p * sliceH;
-            var h  = Math.min(sliceH, cH - y0);
-
-            var slice = document.createElement('canvas');
-            slice.width  = cW;
-            slice.height = h;
-            var ctx = slice.getContext('2d');
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, cW, h);
-            ctx.drawImage(canvas, 0, y0, cW, h, 0, 0, cW, h);
-
-            var imgData = slice.toDataURL('image/jpeg', 0.92);
-            var hMM = h * ratio;
-            pdf.addImage(imgData, 'JPEG', mX, mY, printW, hMM);
+        function renderPage(index){
+          if(index >= pages.length){
+            var clienteEl = document.getElementById('hdr-cliente');
+            var apellido = clienteEl
+              ? clienteEl.textContent.trim().replace(/^Familia\s*/i,'').replace(/\s+/g,'_')
+              : 'Cliente';
+            restoreSummary();
+            pdf.save('Presupuesto_ConMagui_' + apellido + '.pdf');
+            if(btn){btn.textContent='🖨️ Exportar PDF';btn.disabled=false;}
+            return;
           }
 
-          var clienteEl = document.getElementById('hdr-cliente');
-          var apellido = clienteEl
-            ? clienteEl.textContent.trim().replace(/^Familia\s*/i,'').replace(/\s+/g,'_')
-            : 'Cliente';
-          pdf.save('Presupuesto_ConMagui_' + apellido + '.pdf');
+          var pageEl = pages[index];
+          html2canvas(pageEl, {
+            scale:       2,
+            useCORS:     true,
+            allowTaint:  false,
+            backgroundColor: '#ffffff',
+            width:       780,
+            windowWidth: 780,
+            logging:     false,
+            imageTimeout: 0
+          }).then(function(canvas){
+            if(index > 0) pdf.addPage();
 
-          if(btn){btn.textContent='🖨️ Exportar PDF';btn.disabled=false;}
+            var cW = canvas.width;
+            var cH = canvas.height;
+            var ratio = Math.min(printW / cW, printH / cH);
+            var imgW = cW * ratio;
+            var imgH = cH * ratio;
+            var x = mX + (printW - imgW) / 2;
 
-        }).catch(function(err){
-          console.error('Error PDF:', err);
-          el.style.display = 'none';
-          if(btn){btn.textContent='🖨️ Exportar PDF';btn.disabled=false;}
-          alert('Error al generar el PDF. Intentá de nuevo.');
-        });
+            pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', x, mY, imgW, imgH);
+            renderPage(index + 1);
+          }).catch(function(err){
+            restoreSummary();
+            console.error('Error PDF:', err);
+            if(btn){btn.textContent='🖨️ Exportar PDF';btn.disabled=false;}
+            alert('Error al generar el PDF. Intentá de nuevo.');
+          });
+        }
+
+        renderPage(0);
       }); // fin reemplazarImagenesDOM
     });
   });
