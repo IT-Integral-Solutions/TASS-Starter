@@ -2496,12 +2496,15 @@ function buildPDFSummary(){
 
   // PARQUES UNIVERSAL
   if(uniParques.length > 0){
+    var uniFirstChunk = uniParques.slice(0, 2);
+    var uniRestChunk  = uniParques.slice(2);
+
     html += '<div class="pdf-section pdf-page-item">';
     html += '<div class="pdf-section-title">';
     html += '<div class="st-icon" style="background:#EEF4FF;border:1.5px solid #C0D8F0;">🌐</div>';
     html += 'Parques Universal Orlando incluidos</div>';
     html += '<div class="pdf-parks-grid">';
-    uniParques.forEach(function(p){
+    uniFirstChunk.forEach(function(p){
       html += '<div class="pdf-park-card" style="border-color:#C0D8F0;">';
       if(p.img) html += '<div class="pdf-park-img" style="background-image:url(\'' + p.img + '\');"></div>';
       html += '<div class="pdf-park-info">';
@@ -2510,6 +2513,20 @@ function buildPDFSummary(){
       html += '</div></div>';
     });
     html += '</div></div>';
+
+    if(uniRestChunk.length > 0){
+      html += '<div class="pdf-section pdf-page-item">';
+      html += '<div class="pdf-parks-grid">';
+      uniRestChunk.forEach(function(p){
+        html += '<div class="pdf-park-card" style="border-color:#C0D8F0;grid-column:span 2;">';
+        if(p.img) html += '<div class="pdf-park-img" style="background-image:url(\'' + p.img + '\');height:120px;"></div>';
+        html += '<div class="pdf-park-info">';
+        html += '<div class="pdf-park-name">'+p.name+'</div>';
+        html += '<div class="pdf-park-desc">'+p.desc+'</div>';
+        html += '</div></div>';
+      });
+      html += '</div></div>';
+    }
   }
 
   // HOTEL UNIVERSAL
