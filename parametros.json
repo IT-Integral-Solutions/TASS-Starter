@@ -12,7 +12,7 @@
         "nombre": "Animal Kingdom",
         "nivel_cansancio": "bajo",
         "duracion_horas": 6,
-        "mejor_momento": "maÃÂÃÂ±ana",
+        "mejor_momento": "maÃÂÃÂÃÂÃÂ±ana",
         "activo": true,
         "notas": "",
         "tipo": "Temático"
@@ -22,7 +22,7 @@
         "nombre": "EPCOT",
         "nivel_cansancio": "alto",
         "duracion_horas": 10,
-        "mejor_momento": "maÃÂÃÂ±ana",
+        "mejor_momento": "maÃÂÃÂÃÂÃÂ±ana",
         "activo": true,
         "notas": "",
         "tipo": "Temático",
@@ -44,7 +44,7 @@
         "nombre": "Hollywood Studios",
         "nivel_cansancio": "medio",
         "duracion_horas": 8,
-        "mejor_momento": "maÃÂÃÂ±ana",
+        "mejor_momento": "maÃÂÃÂÃÂÃÂ±ana",
         "activo": true,
         "notas": "",
         "tipo": "Temático",
@@ -55,7 +55,7 @@
         "nombre": "Typhoon Lagoon",
         "nivel_cansancio": "bajo",
         "duracion_horas": 6,
-        "mejor_momento": "maÃÂÃÂ±ana",
+        "mejor_momento": "maÃÂÃÂÃÂÃÂ±ana",
         "activo": true,
         "notas": "",
         "tipo": "Acuático"
@@ -65,7 +65,7 @@
         "nombre": "Blizzard Beach",
         "nivel_cansancio": "bajo",
         "duracion_horas": 6,
-        "mejor_momento": "maÃÂÃÂ±ana",
+        "mejor_momento": "maÃÂÃÂÃÂÃÂ±ana",
         "activo": true,
         "notas": "",
         "tipo": "Acuático"
@@ -98,7 +98,7 @@
         "nombre": "Islands of Adventure",
         "nivel_cansancio": "alto",
         "duracion_horas": 9,
-        "mejor_momento": "maÃÂÃÂ±ana",
+        "mejor_momento": "maÃÂÃÂÃÂÃÂ±ana",
         "activo": true,
         "notas": "",
         "tipo": "Temático",
@@ -109,7 +109,7 @@
         "nombre": "Universal Studios Florida",
         "nivel_cansancio": "medio",
         "duracion_horas": 8,
-        "mejor_momento": "maÃÂÃÂ±ana",
+        "mejor_momento": "maÃÂÃÂÃÂÃÂ±ana",
         "activo": true,
         "notas": "",
         "tipo": "Temático",
@@ -120,7 +120,7 @@
         "nombre": "Epic Universe",
         "nivel_cansancio": "alto",
         "duracion_horas": 10,
-        "mejor_momento": "maÃÂÃÂ±ana",
+        "mejor_momento": "maÃÂÃÂÃÂÃÂ±ana",
         "activo": true,
         "notas": "",
         "tipo": "Temático",
@@ -132,13 +132,13 @@
         "tipo": "Acuático",
         "nivel_cansancio": "bajo",
         "duracion_horas": 6,
-        "mejor_momento": "maÃÂÃÂ±ana",
+        "mejor_momento": "maÃÂÃÂÃÂÃÂ±ana",
         "activo": true,
         "notas": ""
       }
     ],
     "reglas": {
-      "descanso_cada_dias_parque": 2,
+      "descanso_cada_dias_parque": 1,
       "dia_llegada": "citywalk",
       "actividades_descanso": [
         "CityWalk",
@@ -157,5 +157,5 @@
   "promociones_activas": [
     "Dining plan + Summer kids"
   ],
-  "ultimo_update": "2026-03-14T20:34:51.619Z"
+  "ultimo_update": "2026-03-14T20:38:59.290Z"
 }
