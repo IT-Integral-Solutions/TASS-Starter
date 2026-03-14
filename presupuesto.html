@@ -1219,37 +1219,76 @@ body.edit-on .price-edit-panel{display:flex;flex-wrap:wrap;align-items:center;}
   <div class="extra-body">
     <p>Este presupuesto incluye <strong>beneficios especiales</strong> vigentes al momento de la cotización. Las promociones son limitadas y sujetas a disponibilidad.</p>
     <div style="display:flex;flex-direction:column;gap:10px;margin:12px 0;" id="promo-lista">
-      <div class="promo-item" id="promo-dia-gratis" style="display:flex;align-items:flex-start;gap:10px;background:linear-gradient(90deg,#F0FFF5,white);border:1.5px solid #A8E0C0;border-radius:10px;padding:12px;position:relative;">
+      <div class="promo-item" id="promo-dia-gratis" data-promo-label="🌅 Día gratis en check-in" style="display:flex;align-items:flex-start;gap:10px;background:linear-gradient(90deg,#F0FFF5,white);border:1.5px solid #A8E0C0;border-radius:10px;padding:12px;position:relative;">
         <button onclick="togglePromoItem('promo-dia-gratis')" style="position:absolute;top:7px;right:9px;background:none;border:none;cursor:pointer;font-size:13px;color:#888;" title="Quitar este beneficio">✕</button>
         <div style="font-size:22px;">🌅</div>
         <div>
-          <div style="font-size:12px;font-weight:800;color:var(--green-d);">Día Gratis en Check-In</div>
+          <div class="promo-title" style="font-size:12px;font-weight:800;color:var(--green-d);" data-editable>Día Gratis en Check-In</div>
           <div style="font-size:10.5px;color:#555;margin-top:3px;line-height:1.5;" data-editable>Con la promoción vigente, el día de check-in no se abona — podés disfrutar de los parques ese mismo día sin costo extra.</div>
         </div>
       </div>
-      <div class="promo-item" id="promo-comidas" style="display:flex;align-items:flex-start;gap:10px;background:linear-gradient(90deg,#FFF9F0,white);border:1.5px solid #F0C080;border-radius:10px;padding:12px;position:relative;">
+      <div class="promo-item" id="promo-comidas" data-promo-label="🍽️ Descuento en plan de comidas" style="display:flex;align-items:flex-start;gap:10px;background:linear-gradient(90deg,#FFF9F0,white);border:1.5px solid #F0C080;border-radius:10px;padding:12px;position:relative;">
         <button onclick="togglePromoItem('promo-comidas')" style="position:absolute;top:7px;right:9px;background:none;border:none;cursor:pointer;font-size:13px;color:#888;" title="Quitar este beneficio">✕</button>
         <div style="font-size:22px;">🍽️</div>
         <div>
-          <div style="font-size:12px;font-weight:800;color:#A06010;">Descuento en Plan de Comidas</div>
+          <div class="promo-title" style="font-size:12px;font-weight:800;color:#A06010;" data-editable>Descuento en Plan de Comidas</div>
           <div style="font-size:10.5px;color:#555;margin-top:3px;line-height:1.5;" data-editable>Plan de comidas con descuento especial incluido en el paquete. Créditos para usar en restaurantes Disney seleccionados.</div>
         </div>
       </div>
-      <div class="promo-item" id="promo-hotel" style="display:flex;align-items:flex-start;gap:10px;background:linear-gradient(90deg,var(--rose-pp),white);border:1.5px solid var(--rose-p);border-radius:10px;padding:12px;position:relative;">
+      <div class="promo-item" id="promo-hotel" data-promo-label="🏨 Descuento en alojamiento" style="display:flex;align-items:flex-start;gap:10px;background:linear-gradient(90deg,var(--rose-pp),white);border:1.5px solid var(--rose-p);border-radius:10px;padding:12px;position:relative;">
         <button onclick="togglePromoItem('promo-hotel')" style="position:absolute;top:7px;right:9px;background:none;border:none;cursor:pointer;font-size:13px;color:#888;" title="Quitar este beneficio">✕</button>
         <div style="font-size:22px;">🏨</div>
         <div>
-          <div style="font-size:12px;font-weight:800;color:var(--rose-d);">Descuento en Alojamiento</div>
+          <div class="promo-title" style="font-size:12px;font-weight:800;color:var(--rose-d);" data-editable>Descuento en Alojamiento</div>
           <div style="font-size:10.5px;color:#555;margin-top:3px;line-height:1.5;" data-editable>Tarifa especial de temporada en el hotel seleccionado. Descuento aplicado sobre precio rack.</div>
         </div>
       </div>
-      <div class="promo-item" id="promo-tickets" style="display:flex;align-items:flex-start;gap:10px;background:linear-gradient(90deg,#EEF4FF,white);border:1.5px solid var(--blue-b);border-radius:10px;padding:12px;position:relative;">
+      <div class="promo-item" id="promo-tickets" data-promo-label="🎟️ Descuento en tickets" style="display:flex;align-items:flex-start;gap:10px;background:linear-gradient(90deg,#EEF4FF,white);border:1.5px solid var(--blue-b);border-radius:10px;padding:12px;position:relative;">
         <button onclick="togglePromoItem('promo-tickets')" style="position:absolute;top:7px;right:9px;background:none;border:none;cursor:pointer;font-size:13px;color:#888;" title="Quitar este beneficio">✕</button>
         <div style="font-size:22px;">🎟️</div>
         <div>
-          <div style="font-size:12px;font-weight:800;color:var(--blue-d);">Descuento en Tickets</div>
+          <div class="promo-title" style="font-size:12px;font-weight:800;color:var(--blue-d);" data-editable>Descuento en Tickets</div>
           <div style="font-size:10.5px;color:#555;margin-top:3px;line-height:1.5;" data-editable>Precio especial en entradas al comprar el paquete completo. Válido para la temporada contratada.</div>
         </div>
+      </div>
+    </div>
+    <div style="border:1.5px dashed #A8E0C0;border-radius:10px;padding:12px;background:#F8FFF9;">
+      <div style="font-size:11px;font-weight:800;color:#1A7A45;margin-bottom:8px;">✏️ Editar promociones</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin-bottom:10px;">
+        <div style="display:flex;flex-direction:column;gap:4px;min-width:260px;flex:1;">
+          <label style="font-size:10px;font-weight:700;color:#4A6A58;">Volver a agregar promoción del listado</label>
+          <select id="promo-preset-select" class="ex-field-input" style="min-height:36px;">
+            <option value="">Elegí una promoción oculta</option>
+          </select>
+        </div>
+        <button type="button" onclick="addPromoPreset()" class="dining-plan-btn" style="border-color:#A8E0C0;color:#1A7A45;">+ Agregar del listado</button>
+      </div>
+      <div style="display:grid;grid-template-columns:90px 1fr 1fr 140px;gap:8px;align-items:end;">
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <label style="font-size:10px;font-weight:700;color:#4A6A58;">Icono</label>
+          <input id="promo-custom-icon" class="ex-field-input" type="text" value="✨" maxlength="4" style="min-height:36px;">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <label style="font-size:10px;font-weight:700;color:#4A6A58;">Título</label>
+          <input id="promo-custom-title" class="ex-field-input" type="text" placeholder="Ej: Upgrade de hotel" style="min-height:36px;">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <label style="font-size:10px;font-weight:700;color:#4A6A58;">Descripción</label>
+          <input id="promo-custom-desc" class="ex-field-input" type="text" placeholder="Detalle de la promoción" style="min-height:36px;">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <label style="font-size:10px;font-weight:700;color:#4A6A58;">Color</label>
+          <select id="promo-custom-theme" class="ex-field-input" style="min-height:36px;">
+            <option value="green">Verde</option>
+            <option value="gold">Dorado</option>
+            <option value="rose">Rosa</option>
+            <option value="blue">Azul</option>
+            <option value="violet">Violeta</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-top:10px;display:flex;justify-content:flex-end;">
+        <button type="button" onclick="addCustomPromo()" class="dining-plan-btn" style="border-color:#A8E0C0;color:#1A7A45;">+ Crear promoción nueva</button>
       </div>
     </div>
     <div class="ex-note" data-editable style="margin-top:8px;">Promociones sujetas a disponibilidad y cambio sin previo aviso · Válidas al momento de cotización · ¡Reservá rápido para asegurar el beneficio!</div>
@@ -1806,6 +1845,87 @@ function togglePromoItem(id){
   if(!el) return;
   var isHidden = el.style.display === 'none';
   el.style.display = isHidden ? 'flex' : 'none';
+  refreshPromoEditor();
+}
+
+var _promoPresetIds = ['promo-dia-gratis','promo-comidas','promo-hotel','promo-tickets'];
+var _promoThemeMap = {
+  green:{bg:'linear-gradient(90deg,#F0FFF5,white)',border:'#A8E0C0',title:'#1A7A45'},
+  gold:{bg:'linear-gradient(90deg,#FFF9F0,white)',border:'#F0C080',title:'#A06010'},
+  rose:{bg:'linear-gradient(90deg,#FBF0F3,white)',border:'#F2D4DC',title:'#B5566A'},
+  blue:{bg:'linear-gradient(90deg,#EEF4FF,white)',border:'#C0D8F0',title:'#1A5A9A'},
+  violet:{bg:'linear-gradient(90deg,#F4EEFB,white)',border:'#C8B0DC',title:'#7B5BA7'}
+};
+
+function refreshPromoEditor(){
+  var select = document.getElementById('promo-preset-select');
+  if(!select) return;
+  var current = select.value;
+  select.innerHTML = '<option value="">Elegí una promoción oculta</option>';
+  _promoPresetIds.forEach(function(id){
+    var el = document.getElementById(id);
+    if(el && el.style.display === 'none'){
+      var titleEl = el.querySelector('.promo-title');
+      var txt = titleEl ? titleEl.textContent.trim() : id;
+      var opt = document.createElement('option');
+      opt.value = id;
+      opt.textContent = txt;
+      select.appendChild(opt);
+    }
+  });
+  if(current && select.querySelector('option[value="'+current+'"]')) select.value = current;
+}
+
+function addPromoPreset(){
+  var select = document.getElementById('promo-preset-select');
+  if(!select || !select.value) return;
+  var el = document.getElementById(select.value);
+  if(el) el.style.display = 'flex';
+  select.value = '';
+  refreshPromoEditor();
+}
+
+function addCustomPromo(){
+  var iconEl = document.getElementById('promo-custom-icon');
+  var titleEl = document.getElementById('promo-custom-title');
+  var descEl = document.getElementById('promo-custom-desc');
+  var themeEl = document.getElementById('promo-custom-theme');
+  var listEl = document.getElementById('promo-lista');
+  if(!iconEl || !titleEl || !descEl || !themeEl || !listEl) return;
+
+  var icon = (iconEl.value || '✨').trim();
+  var title = (titleEl.value || '').trim();
+  var desc = (descEl.value || '').trim();
+  var theme = _promoThemeMap[themeEl.value] || _promoThemeMap.green;
+  if(!title || !desc) return;
+
+  var id = 'promo-custom-' + Date.now();
+  var wrap = document.createElement('div');
+  wrap.className = 'promo-item';
+  wrap.id = id;
+  wrap.setAttribute('data-custom-promo','1');
+  wrap.setAttribute('data-promo-label', icon + ' ' + title);
+  wrap.style.cssText = 'display:flex;align-items:flex-start;gap:10px;background:'+theme.bg+';border:1.5px solid '+theme.border+';border-radius:10px;padding:12px;position:relative;';
+  wrap.innerHTML =
+    '<button onclick="removeCustomPromo(\''+id+'\')" style="position:absolute;top:7px;right:9px;background:none;border:none;cursor:pointer;font-size:13px;color:#888;" title="Quitar este beneficio">✕</button>'+
+    '<div style="font-size:22px;">'+icon+'</div>'+
+    '<div>'+
+      '<div class="promo-title" style="font-size:12px;font-weight:800;color:'+theme.title+';" data-editable>'+title+'</div>'+
+      '<div style="font-size:10.5px;color:#555;margin-top:3px;line-height:1.5;" data-editable>'+desc+'</div>'+
+    '</div>';
+  listEl.appendChild(wrap);
+
+  titleEl.value = '';
+  descEl.value = '';
+  iconEl.value = '✨';
+  themeEl.value = 'green';
+  refreshPromoEditor();
+}
+
+function removeCustomPromo(id){
+  var el = document.getElementById(id);
+  if(el && el.parentNode) el.parentNode.removeChild(el);
+  refreshPromoEditor();
 }
 
 // ══ CRUCERO DISNEY ══════════════════════════════════════════════════════
@@ -1903,6 +2023,7 @@ document.addEventListener('DOMContentLoaded',function(){
   recalcBBB();
   recalcLL();
   recalcCrucero();
+  refreshPromoEditor();
 });
 </script>
 
@@ -2406,15 +2527,11 @@ function buildPDFSummary(){
   var promoSection = document.getElementById('sec-promo');
   if(promoSection && promoSection.style.display !== 'none'){
     var promoItems = [];
-    var promoMap = {
-      'promo-dia-gratis':'🌅 Día gratis check-in',
-      'promo-comidas':'🍽️ Descuento comidas',
-      'promo-hotel':'🏨 Descuento alojamiento',
-      'promo-tickets':'🎟️ Descuento tickets'
-    };
-    Object.keys(promoMap).forEach(function(id){
-      var el = document.getElementById(id);
-      if(el && el.style.display !== 'none') promoItems.push(promoMap[id]);
+    promoSection.querySelectorAll('.promo-item').forEach(function(el){
+      if(el.style.display === 'none') return;
+      var titleEl = el.querySelector('.promo-title');
+      var label = titleEl ? titleEl.textContent.trim() : (el.getAttribute('data-promo-label') || '');
+      if(label) promoItems.push(label);
     });
     if(promoItems.length > 0){
       extras.push({
@@ -3076,15 +3193,11 @@ function serializarPresupuesto(){
   var promos = [];
   var secPromo = document.getElementById('sec-promo');
   if(secPromo && secPromo.style.display !== 'none'){
-    var promoMap = {
-      'promo-dia-gratis': '🌅 Día gratis en check-in',
-      'promo-comidas': '🍽️ Descuento en plan de comidas',
-      'promo-hotel': '🏨 Descuento en alojamiento',
-      'promo-tickets': '🎟️ Descuento en tickets'
-    };
-    Object.keys(promoMap).forEach(function(id){
-      var el = document.getElementById(id);
-      if(el && el.style.display !== 'none') promos.push(promoMap[id]);
+    secPromo.querySelectorAll('.promo-item').forEach(function(el){
+      if(el.style.display === 'none') return;
+      var titleEl = el.querySelector('.promo-title');
+      var label = titleEl ? titleEl.textContent.trim() : (el.getAttribute('data-promo-label') || '');
+      if(label) promos.push(label);
     });
     // Leer texto editable de la sección promo
     var promoEdit = secPromo.querySelector('[data-editable], .promo-text, p');
