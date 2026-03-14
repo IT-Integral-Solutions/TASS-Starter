@@ -247,6 +247,11 @@ body.edit-on .park-del{display:flex;}
 .park-card.removed .park-del{display:none;}
 .park-undo{display:none;position:absolute;top:10px;right:10px;font-size:10px;font-weight:700;color:#7A5010;background:#FBF4E0;border:1px solid #E8D8A0;border-radius:5px;padding:2px 8px;cursor:pointer;}
 .park-card.removed .park-undo{display:block;}
+.park-restore-panel{margin-top:10px;padding:10px 12px;border:1.5px dashed #E8D8A0;border-radius:10px;background:#FFF9EE;display:flex;gap:8px;align-items:end;flex-wrap:wrap;}
+.park-restore-panel label{display:flex;flex-direction:column;gap:4px;min-width:220px;flex:1;font-size:10px;font-weight:700;color:#7A5010;}
+.park-restore-panel select{min-height:36px;padding:8px 10px;border:1px solid #E8D8A0;border-radius:8px;background:white;font:600 10.5px 'Montserrat',sans-serif;color:#5A4530;}
+.park-restore-panel button{padding:8px 12px;border-radius:8px;border:1.5px solid #E8D8A0;background:#FBF4E0;color:#7A5010;font:700 10.5px 'Montserrat',sans-serif;cursor:pointer;}
+.park-restore-panel button:hover{background:#F7EBC9;}
 
 /* ─── TICKET MULTI-SELECT ────────────────────────── */
 .ticket-type{cursor:pointer;transition:background .15s;}
@@ -413,8 +418,8 @@ body.edit-on .price-edit-panel{display:flex;flex-wrap:wrap;align-items:center;}
   </div>
   <div class="parks-grid">
     <!-- Magic Kingdom -->
-    <div class="park-card">
-      <button class="park-del" onclick="this.closest('.park-card').classList.add('removed')" title="Quitar parque">✕</button>
+    <div class="park-card" data-park-id="mk" data-park-label="🏰 Magic Kingdom">
+      <button class="park-del" onclick="removeParkCard(this)" title="Quitar parque">✕</button>
       <img class="pc-img" src="asset/presu/magic-kingdom.webp" alt="Magic Kingdom"
            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
       <div class="pc-img-fallback" style="background:linear-gradient(145deg,#1A3080,#0E1858);display:none;">🏰</div>
@@ -425,8 +430,8 @@ body.edit-on .price-edit-panel{display:flex;flex-wrap:wrap;align-items:center;}
       </div>
     </div>
     <!-- Hollywood Studios -->
-    <div class="park-card">
-      <button class="park-del" onclick="this.closest('.park-card').classList.add('removed')" title="Quitar parque">✕</button>
+    <div class="park-card" data-park-id="hs" data-park-label="🎬 Hollywood Studios">
+      <button class="park-del" onclick="removeParkCard(this)" title="Quitar parque">✕</button>
       <img class="pc-img" src="asset/presu/hollywood%20studios.webp" alt="Hollywood Studios"
            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
       <div class="pc-img-fallback" style="background:linear-gradient(145deg,#8A1818,#580E0E);display:none;">🎬</div>
@@ -437,8 +442,8 @@ body.edit-on .price-edit-panel{display:flex;flex-wrap:wrap;align-items:center;}
       </div>
     </div>
     <!-- EPCOT -->
-    <div class="park-card">
-      <button class="park-del" onclick="this.closest('.park-card').classList.add('removed')" title="Quitar parque">✕</button>
+    <div class="park-card" data-park-id="epcot" data-park-label="🌍 EPCOT">
+      <button class="park-del" onclick="removeParkCard(this)" title="Quitar parque">✕</button>
       <img class="pc-img" src="asset/presu/Epcot-1.webp" alt="EPCOT"
            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
       <div class="pc-img-fallback" style="background:linear-gradient(145deg,#1A7A5A,#0E5040);display:none;">🌍</div>
@@ -449,8 +454,8 @@ body.edit-on .price-edit-panel{display:flex;flex-wrap:wrap;align-items:center;}
       </div>
     </div>
     <!-- Animal Kingdom -->
-    <div class="park-card">
-      <button class="park-del" onclick="this.closest('.park-card').classList.add('removed')" title="Quitar parque">✕</button>
+    <div class="park-card" data-park-id="ak" data-park-label="🦁 Animal Kingdom">
+      <button class="park-del" onclick="removeParkCard(this)" title="Quitar parque">✕</button>
       <img class="pc-img" src="asset/presu/ak.webp" alt="Animal Kingdom"
            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
       <div class="pc-img-fallback" style="background:linear-gradient(145deg,#3A6820,#285010);display:none;">🦁</div>
@@ -460,6 +465,14 @@ body.edit-on .price-edit-panel{display:flex;flex-wrap:wrap;align-items:center;}
         <span class="pc-tag" style="background:var(--vio-p);color:var(--violet);">Avatar · Safari</span>
       </div>
     </div>
+  </div>
+  <div class="park-restore-panel">
+    <label>Volver a agregar parque Disney
+      <select id="restore-disney-park">
+        <option value="">Elegí un parque oculto</option>
+      </select>
+    </label>
+    <button type="button" onclick="restoreHiddenPark('disney-parks','restore-disney-park')">+ Agregar parque</button>
   </div>
 </div>
 
@@ -612,8 +625,8 @@ body.edit-on .price-edit-panel{display:flex;flex-wrap:wrap;align-items:center;}
   </div>
   <div class="parks-grid">
     <!-- Universal Studios -->
-    <div class="park-card" style="border-color:var(--blue-b);">
-      <button class="park-del" onclick="this.closest('.park-card').classList.add('removed')" title="Quitar parque">✕</button>
+    <div class="park-card" style="border-color:var(--blue-b);" data-park-id="usf" data-park-label="🎬 Universal Studios Florida">
+      <button class="park-del" onclick="removeParkCard(this)" title="Quitar parque">✕</button>
       <img class="pc-img" src="asset/presu/universal.webp" alt="Universal Studios"
            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
       <div class="pc-img-fallback" style="background:linear-gradient(145deg,#2A5AA8,#1A3878);display:none;">🎬</div>
@@ -624,9 +637,9 @@ body.edit-on .price-edit-panel{display:flex;flex-wrap:wrap;align-items:center;}
       </div>
     </div>
     <!-- Islands of Adventure -->
-    <div class="park-card" style="border-color:var(--blue-b);">
-      <button class="park-del" onclick="this.closest('.park-card').classList.add('removed')" title="Quitar parque">✕</button>
-      <img class="pc-img" src="asset/presu/islands-of-adventure.webp" alt="Islands of Adventure"
+    <div class="park-card" style="border-color:var(--blue-b);" data-park-id="ioa" data-park-label="🏝️ Islands of Adventure">
+      <button class="park-del" onclick="removeParkCard(this)" title="Quitar parque">✕</button>
+      <img class="pc-img" src="asset/presu/Islands-of-Adventure.webp" alt="Islands of Adventure"
            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
       <div class="pc-img-fallback" style="background:linear-gradient(145deg,#207850,#0E5030);display:none;">🏝️</div>
       <div class="pc-info">
@@ -636,8 +649,8 @@ body.edit-on .price-edit-panel{display:flex;flex-wrap:wrap;align-items:center;}
       </div>
     </div>
     <!-- Epic Universe -->
-    <div class="park-card" style="border-color:var(--blue-b);grid-column:span 2;">
-      <button class="park-del" onclick="this.closest('.park-card').classList.add('removed')" title="Quitar parque">✕</button>
+    <div class="park-card" style="border-color:var(--blue-b);grid-column:span 2;" data-park-id="epic" data-park-label="✨ Epic Universe">
+      <button class="park-del" onclick="removeParkCard(this)" title="Quitar parque">✕</button>
       <img class="pc-img" src="asset/presu/epic-universe.jpg" alt="Epic Universe"
            style="height:140px;"
            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
@@ -648,6 +661,14 @@ body.edit-on .price-edit-panel{display:flex;flex-wrap:wrap;align-items:center;}
         <span class="pc-tag" style="background:var(--vio-p);color:var(--violet);">Harry Potter · Nintendo · Dragons · Monsters</span>
       </div>
     </div>
+  </div>
+  <div class="park-restore-panel">
+    <label>Volver a agregar parque Universal
+      <select id="restore-universal-park">
+        <option value="">Elegí un parque oculto</option>
+      </select>
+    </label>
+    <button type="button" onclick="restoreHiddenPark('universal-parks','restore-universal-park')">+ Agregar parque</button>
   </div>
 </div>
 
@@ -1148,7 +1169,7 @@ body.edit-on .price-edit-panel{display:flex;flex-wrap:wrap;align-items:center;}
       <div id="agua-blizzard" style="border:1.5px solid #A0CFEF;border-radius:10px;overflow:hidden;background:#F0F8FF;position:relative;">
         <button onclick="toggleAguaPark('blizzard')" title="Quitar del presupuesto" id="btn-rm-blizzard"
           style="position:absolute;top:6px;right:7px;z-index:2;background:rgba(255,255,255,.85);border:1px solid #ccc;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:11px;color:#555;line-height:1;">✕</button>
-        <div style="height:90px;background-image:url('https://wsrv.nl/?url=cdn.parksmedia.wdprapps.disney.com/media/blog/20200706/blizzard-beach-hero.jpg&w=400&q=80');background-size:cover;background-position:center;"></div>
+        <div style="height:90px;background-image:url('asset/presu/blizzard%20beach.%20webp.jpeg');background-size:cover;background-position:center;"></div>
         <div style="padding:8px 10px;">
           <div style="font-size:11.5px;font-weight:800;color:#1A5A9A;">❄️ Blizzard Beach</div>
           <div style="font-size:9.5px;color:#555;margin-top:3px;line-height:1.5;" data-editable>Temática invernal en pleno Florida. Tobogán Summit Plummit — el más alto de Disney. Río lento, área para chicos y adrenalina máxima para los más grandes.</div>
@@ -1158,7 +1179,7 @@ body.edit-on .price-edit-panel{display:flex;flex-wrap:wrap;align-items:center;}
       <div id="agua-typhoon" style="border:1.5px solid #A0CFEF;border-radius:10px;overflow:hidden;background:#F0F8FF;position:relative;">
         <button onclick="toggleAguaPark('typhoon')" title="Quitar del presupuesto" id="btn-rm-typhoon"
           style="position:absolute;top:6px;right:7px;z-index:2;background:rgba(255,255,255,.85);border:1px solid #ccc;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:11px;color:#555;line-height:1;">✕</button>
-        <div style="height:90px;background-image:url('https://wsrv.nl/?url=cdn.parksmedia.wdprapps.disney.com/media/blog/20200706/typhoon-lagoon-hero.jpg&w=400&q=80');background-size:cover;background-position:center;"></div>
+        <div style="height:90px;background-image:url('asset/presu/typhoon-lagoo.webp');background-size:cover;background-position:center;"></div>
         <div style="padding:8px 10px;">
           <div style="font-size:11.5px;font-weight:800;color:#1A5A9A;">🌀 Typhoon Lagoon</div>
           <div style="font-size:9.5px;color:#555;margin-top:3px;line-height:1.5;" data-editable>Temática tropical con naufragio. Piscina de olas gigantes — una de las más grandes del mundo. Snorkeling con tiburones y toboganes para todos los gustos.</div>
@@ -1171,7 +1192,7 @@ body.edit-on .price-edit-panel{display:flex;flex-wrap:wrap;align-items:center;}
       <div id="agua-volcano" style="border:1.5px solid #A0CFEF;border-radius:10px;overflow:hidden;background:#EEF4FF;position:relative;">
         <button onclick="toggleAguaPark('volcano')" title="Quitar del presupuesto" id="btn-rm-volcano"
           style="position:absolute;top:6px;right:7px;z-index:2;background:rgba(255,255,255,.85);border:1px solid #ccc;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:11px;color:#555;line-height:1;">✕</button>
-        <div style="height:130px;background-image:url('https://wsrv.nl/?url=www.universalorlando.com/content/dam/uo/images/parks/volcano-bay/volcano-bay-hero.jpg&w=400&q=80');background-size:cover;background-position:center top;"></div>
+        <div style="height:130px;background-image:url('asset/presu/Volcano-Bay.webp');background-size:cover;background-position:center top;"></div>
         <div style="padding:8px 12px;">
           <div style="font-size:11.5px;font-weight:800;color:#1A5A9A;">🌋 Volcano Bay — Universal</div>
           <div style="font-size:9.5px;color:#555;margin-top:3px;line-height:1.5;" data-editable>Parque acuático de Universal con temática polinesia. Volcán central de 20 pisos con toboganes extremos. Sistema TapuTapu — pulsera digital sin filas. Río lento, piscina de olas y zona exclusiva para chicos. Incluido para huéspedes on-site de Universal.</div>
@@ -1840,6 +1861,42 @@ function toggleAguaPark(park){
   if(btn) btn.textContent = removed ? '✕' : '↩️';
 }
 
+function refreshParkRestoreEditors(){
+  document.querySelectorAll('.parks-section').forEach(function(section){
+    var select = section.querySelector('.park-restore-panel select');
+    if(!select) return;
+    var current = select.value;
+    select.innerHTML = '<option value="">Elegí un parque oculto</option>';
+    section.querySelectorAll('.park-card.removed').forEach(function(card){
+      var parkId = card.getAttribute('data-park-id');
+      var label = card.getAttribute('data-park-label') || parkId || 'Parque';
+      if(!parkId) return;
+      var opt = document.createElement('option');
+      opt.value = parkId;
+      opt.textContent = label;
+      select.appendChild(opt);
+    });
+    if(current && select.querySelector('option[value="'+current+'"]')) select.value = current;
+  });
+}
+
+function removeParkCard(btn){
+  var card = btn && btn.closest('.park-card');
+  if(!card) return;
+  card.classList.add('removed');
+  refreshParkRestoreEditors();
+}
+
+function restoreHiddenPark(sectionId, selectId){
+  var section = document.getElementById(sectionId);
+  var select = document.getElementById(selectId);
+  if(!section || !select || !select.value) return;
+  var card = section.querySelector('.park-card[data-park-id="'+select.value+'"]');
+  if(card) card.classList.remove('removed');
+  select.value = '';
+  refreshParkRestoreEditors();
+}
+
 function togglePromoItem(id){
   var el = document.getElementById(id);
   if(!el) return;
@@ -2014,7 +2071,7 @@ document.addEventListener('DOMContentLoaded',function(){
       var undo=document.createElement('button');
       undo.className='park-undo';
       undo.textContent='↩ Restaurar';
-      undo.onclick=function(){ card.classList.remove('removed'); };
+      undo.onclick=function(){ card.classList.remove('removed'); refreshParkRestoreEditors(); };
       card.appendChild(undo);
     }
   });
@@ -2024,6 +2081,7 @@ document.addEventListener('DOMContentLoaded',function(){
   recalcLL();
   recalcCrucero();
   refreshPromoEditor();
+  refreshParkRestoreEditors();
 });
 </script>
 
