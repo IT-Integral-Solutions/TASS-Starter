@@ -3217,12 +3217,41 @@ function exportarPDF(){
           var ratio  = printW / cW;         // mm por px
           var sliceH = Math.floor((pgH - mY * 2) / ratio); // px por página
 
+          // ── Smart-cut: buscar fila más blanca cerca del corte ──────
+          function rowBrightness(imgData, y, w){
+            var d = imgData.data, sum = 0;
+            for(var x = 0; x < w; x++){
+              var i = (y * w + x) * 4;
+              sum += 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
+            }
+            return sum / w;
+          }
+          function bestCutY(nominalY, windowPx){
+            var yMin = Math.max(0, nominalY - windowPx);
+            var yMax = Math.min(cH - 1, nominalY + windowPx);
+            if(yMin >= yMax) return nominalY;
+            var strip = canvas.getContext('2d').getImageData(0, yMin, cW, yMax - yMin);
+            var best = nominalY, bestScore = -1;
+            for(var row = 0; row < (yMax - yMin); row++){
+              var score = rowBrightness(strip, row, cW);
+              if(score > bestScore){ bestScore = score; best = yMin + row; }
+            }
+            return best;
+          }
+
+          // Calcular puntos de corte óptimos
           var pageCount = Math.ceil(cH / sliceH);
+          var cuts = [0];
+          for(var p = 1; p < pageCount; p++){
+            cuts.push(bestCutY(p * sliceH, Math.round(sliceH * 0.12)));
+          }
+          cuts.push(cH);
 
           for(var p = 0; p < pageCount; p++){
             if(p > 0) pdf.addPage();
-            var y0 = p * sliceH;
-            var h  = Math.min(sliceH, cH - y0);
+            var y0 = cuts[p];
+            var h  = cuts[p+1] - y0;
+            if(h <= 0) continue;
 
             var slice = document.createElement('canvas');
             slice.width  = cW;
