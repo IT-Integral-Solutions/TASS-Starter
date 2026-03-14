@@ -319,14 +319,31 @@ body.edit-on .price-edit-panel{display:flex;flex-wrap:wrap;align-items:center;}
     display:block!important;
     position:static!important;
     width:100%!important;
-    max-width:960px!important;
+    max-width:800px!important;
     margin:0 auto!important;
-    padding:20px 30px!important;
+    padding:0!important;
   }
+
+  /* Márgenes de página */
+  @page { margin: 15mm 12mm; }
 
   /* Colores y fuentes */
   body{ background:white!important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
   * { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; print-color-adjust: exact !important; }
+
+  /* Evitar cortes en todos los bloques importantes */
+  .pdf-section           { break-inside: avoid !important; page-break-inside: avoid !important; }
+  .pdf-park-card         { break-inside: avoid !important; page-break-inside: avoid !important; }
+  .pdf-parks-grid        { break-inside: avoid !important; page-break-inside: avoid !important; }
+  .pdf-hotel-card        { break-inside: avoid !important; page-break-inside: avoid !important; }
+  .pdf-dates-row         { break-inside: avoid !important; page-break-inside: avoid !important; }
+  .pdf-extra-card        { break-inside: avoid !important; page-break-inside: avoid !important; }
+  .pdf-extras-grid       { break-inside: avoid !important; page-break-inside: avoid !important; }
+  .pdf-total-box         { break-inside: avoid !important; page-break-inside: avoid !important; }
+  .pres-financia         { break-inside: avoid !important; page-break-inside: avoid !important; }
+  .pdf-section-title     { break-after:  avoid !important; page-break-after: avoid !important; }
+  table                  { break-inside: avoid !important; page-break-inside: avoid !important; }
+  tr                     { break-inside: avoid !important; page-break-inside: avoid !important; }
 }
 </style>
 </head>
@@ -3092,157 +3109,26 @@ function exportarPDF(){
   var btn = document.getElementById('btn-export');
   if(btn){ btn.textContent = '⏳ Preparando...'; btn.disabled = true; }
 
-  function loadScript(src, cb){
-    if(document.querySelector('script[src="'+src+'"]')){ cb(); return; }
-    var s = document.createElement('script');
-    s.src = src; s.onload = cb; document.head.appendChild(s);
-  }
+  // Generar el contenido del resumen en el DOM
+  buildPDFSummary();
 
-  loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', function(){
-    loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', function(){
-      buildPDFSummary();
-      setTimeout(function(){
-        _generarPDFConJsPDF(btn);
-      }, 600);
-    });
-  });
-}
-
-function _generarPDFConJsPDF(btn){
-  var el = document.getElementById('pdf-summary');
-  if(!el){ if(btn){btn.textContent='🖨️ Exportar PDF';btn.disabled=false;} return; }
-
-  var RENDER_W = 800; // ancho fijo de render (debe coincidir con max-width del #pdf-summary)
-
-  // Mostrar temporalmente para captura
-  var prevDisplay = el.style.display;
-  var prevPosition = el.style.position;
-  var prevTop = el.style.top;
-  var prevLeft = el.style.left;
-  var prevWidth = el.style.width;
-  var prevMaxWidth = el.style.maxWidth;
-  var prevZIndex = el.style.zIndex;
-
-  el.style.display = 'block';
-  el.style.position = 'fixed';
-  el.style.top = '-99999px';
-  el.style.left = '0';
-  el.style.width = RENDER_W + 'px';
-  el.style.maxWidth = RENDER_W + 'px';
-  el.style.zIndex = '-1';
-
-  function restore(){
-    el.style.display = prevDisplay;
-    el.style.position = prevPosition;
-    el.style.top = prevTop;
-    el.style.left = prevLeft;
-    el.style.width = prevWidth;
-    el.style.maxWidth = prevMaxWidth;
-    el.style.zIndex = prevZIndex;
-  }
-
-  // Escanea píxel a píxel buscando la fila más blanca en ventana ±windowPx
-  function getBestCutY(data, canvasW, nominalY, windowPx){
-    var best = nominalY;
-    var bestWhite = -1;
-    var from = Math.max(0, nominalY - windowPx);
-    var to   = Math.min(Math.floor(data.length / (canvasW * 4)) - 1, nominalY + windowPx);
-    for(var y = from; y <= to; y++){
-      var sum = 0;
-      var cols = Math.min(canvasW, 80); // samplear 80 columnas distribuidas
-      var step = Math.max(1, Math.floor(canvasW / cols));
-      var count = 0;
-      for(var x = 0; x < canvasW; x += step){
-        var idx = (y * canvasW + x) * 4;
-        sum += (data[idx] + data[idx+1] + data[idx+2]) / 3;
-        count++;
-      }
-      var whiteness = sum / count;
-      if(whiteness > bestWhite){ bestWhite = whiteness; best = y; }
-    }
-    return best;
-  }
-
-  // Esperar fuentes y layout
+  // Esperar a que el DOM renderice y las imágenes carguen
   setTimeout(function(){
-    html2canvas(el, {
-      scale: 2,
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: '#ffffff',
-      width: RENDER_W,
-      windowWidth: RENDER_W,
-      logging: false
-    }).then(function(canvas){
-      restore();
-
-      var { jsPDF } = window.jspdf;
-      // Usar puntos (pt) para máxima precisión
-      var pdf = new jsPDF({ orientation:'portrait', unit:'pt', format:'a4' });
-      var pageW_pt = pdf.internal.pageSize.getWidth();   // 595.28pt
-      var pageH_pt = pdf.internal.pageSize.getHeight();  // 841.89pt
-      var margin_pt = 22;
-      var printW_pt = pageW_pt - margin_pt * 2;          // ancho imprimible en pt
-
-      var canvasW = canvas.width;   // RENDER_W * scale = 1600px
-      var canvasH = canvas.height;
-
-      // Ratio: cuántos px de canvas equivalen a 1pt
-      var pxPerPt = canvasW / printW_pt;
-
-      var pageH_px  = (pageH_pt - margin_pt * 2) * pxPerPt; // alto de página en px de canvas
-      var windowPx  = Math.round(30 * pxPerPt);              // ventana de búsqueda ±30pt
-
-      // Obtener datos de píxeles para análisis de whiteness
-      var ctx = canvas.getContext('2d');
-      var pixelData = ctx.getImageData(0, 0, canvasW, canvasH).data;
-
-      // Calcular puntos de corte con smart cut
-      var cuts = [0]; // siempre empieza en 0
-      var pos = 0;
-      while(pos + pageH_px < canvasH){
-        var nominalY = Math.round(pos + pageH_px);
-        var bestY    = getBestCutY(pixelData, canvasW, nominalY, windowPx);
-        cuts.push(bestY);
-        pos = bestY;
-      }
-      cuts.push(canvasH);
-
-      // Generar páginas
-      for(var i = 0; i < cuts.length - 1; i++){
-        if(i > 0) pdf.addPage();
-
-        var y0 = cuts[i];
-        var y1 = cuts[i+1];
-        var sliceH_px = y1 - y0;
-
-        var pageCanvas = document.createElement('canvas');
-        pageCanvas.width  = canvasW;
-        pageCanvas.height = sliceH_px;
-        var pctx = pageCanvas.getContext('2d');
-        pctx.fillStyle = '#ffffff';
-        pctx.fillRect(0, 0, canvasW, sliceH_px);
-        pctx.drawImage(canvas, 0, y0, canvasW, sliceH_px, 0, 0, canvasW, sliceH_px);
-
-        var imgData   = pageCanvas.toDataURL('image/jpeg', 0.93);
-        var sliceH_pt = sliceH_px / pxPerPt;
-        pdf.addImage(imgData, 'JPEG', margin_pt, margin_pt, printW_pt, sliceH_pt);
-      }
-
-      // Nombre del archivo
-      var clienteEl = document.getElementById('hdr-cliente');
-      var apellido = clienteEl ? clienteEl.textContent.trim().replace(/^Familia\s*/i,'').replace(/\s+/g,'_') : 'Cliente';
-      var filename = 'Presupuesto_ConMagui_' + apellido + '.pdf';
-      pdf.save(filename);
-
+    // Restaurar botón después de imprimir
+    window.addEventListener('afterprint', function onAfterPrint(){
       if(btn){ btn.textContent = '🖨️ Exportar PDF'; btn.disabled = false; }
-    }).catch(function(err){
-      console.error('Error generando PDF:', err);
-      restore();
-      if(btn){ btn.textContent = '🖨️ Exportar PDF'; btn.disabled = false; }
-      alert('Error al generar el PDF. Intentá de nuevo.');
+      window.removeEventListener('afterprint', onAfterPrint);
     });
-  }, 400);
+
+    // El navegador abre el dialogo "Guardar como PDF"
+    // El usuario elige donde guardar -> se descarga como archivo
+    window.print();
+
+    // Fallback por si afterprint no dispara (algunos navegadores)
+    setTimeout(function(){
+      if(btn && btn.disabled){ btn.textContent = '🖨️ Exportar PDF'; btn.disabled = false; }
+    }, 3000);
+  }, 600);
 }
 </script>
 <footer style="background:#0B1628;padding:28px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-top:40px;print-color-adjust:exact;-webkit-print-color-adjust:exact;">
