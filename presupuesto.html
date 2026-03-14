@@ -747,7 +747,7 @@ body.edit-on .price-edit-panel{display:flex;flex-wrap:wrap;align-items:center;}
 
   <div class="hotel-card" id="rev-u1" style="border-color:var(--blue-b);">
     <div class="hc-img-col">
-      <img src="asset/presu/blizzard%20beach.%20webp.jpeg" alt="Cabana Bay"
+      <img src="asset/presu/cabana-bay.jpg" alt="Cabana Bay"
            onerror="this.style.display='none';this.parentElement.querySelector('.hc-img-fallback').style.display='flex'">
       <div class="hc-img-fallback" style="background:linear-gradient(145deg,#C87820,#905010);display:none;">🏖️</div>
       <div class="hc-overlay">
@@ -769,7 +769,7 @@ body.edit-on .price-edit-panel{display:flex;flex-wrap:wrap;align-items:center;}
 
   <div class="hotel-card" id="rev-u2" style="border-color:var(--blue-b);">
     <div class="hc-img-col">
-      <img src="asset/presu/typhoon-lagoo.webp" alt="Endless Summer"
+      <img src="asset/presu/endless-summer-dockside.jpg" alt="Endless Summer"
            onerror="this.style.display='none';this.parentElement.querySelector('.hc-img-fallback').style.display='flex'">
       <div class="hc-img-fallback" style="background:linear-gradient(145deg,#2888C8,#1A5A9A);display:none;">🌊</div>
       <div class="hc-overlay">
@@ -791,7 +791,7 @@ body.edit-on .price-edit-panel{display:flex;flex-wrap:wrap;align-items:center;}
 
   <div class="hotel-card" id="rev-u3" style="border-color:var(--green-l);background:linear-gradient(90deg,rgba(91,173,127,.04),white);">
     <div class="hc-img-col">
-      <img src="asset/presu/Volcano-Bay.webp" alt="Terra Luna"
+      <img src="asset/presu/terra-luna.jpg" alt="Terra Luna"
            onerror="this.style.display='none';this.parentElement.querySelector('.hc-img-fallback').style.display='flex'">
       <div class="hc-img-fallback" style="background:linear-gradient(145deg,#1A7A5A,#0E5040);display:none;">🌙</div>
       <div class="hc-overlay">
@@ -1192,7 +1192,7 @@ body.edit-on .price-edit-panel{display:flex;flex-wrap:wrap;align-items:center;}
       <div id="agua-volcano" style="border:1.5px solid #A0CFEF;border-radius:10px;overflow:hidden;background:#EEF4FF;position:relative;">
         <button onclick="toggleAguaPark('volcano')" title="Quitar del presupuesto" id="btn-rm-volcano"
           style="position:absolute;top:6px;right:7px;z-index:2;background:rgba(255,255,255,.85);border:1px solid #ccc;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:11px;color:#555;line-height:1;">✕</button>
-        <div style="height:130px;background-image:url('asset/presu/Volcano-Bay.webp');background-size:cover;background-position:center top;"></div>
+        <div style="height:130px;background-image:url('asset/presu/Volcano-Bay.webp');background-size:cover;background-position:center 68%;"></div>
         <div style="padding:8px 12px;">
           <div style="font-size:11.5px;font-weight:800;color:#1A5A9A;">🌋 Volcano Bay — Universal</div>
           <div style="font-size:9.5px;color:#555;margin-top:3px;line-height:1.5;" data-editable>Parque acuático de Universal con temática polinesia. Volcán central de 20 pisos con toboganes extremos. Sistema TapuTapu — pulsera digital sin filas. Río lento, piscina de olas y zona exclusiva para chicos. Incluido para huéspedes on-site de Universal.</div>
@@ -2493,9 +2493,9 @@ function buildPDFSummary(){
       var uDet   = uRow.querySelector('.opt-details');
       var uPrice = uRow.querySelector('.opt-price');
       var uImgs  = {
-        u1:'asset/presu/blizzard%20beach.%20webp.jpeg',
-        u2:'asset/presu/typhoon-lagoo.webp',
-        u3:'asset/presu/Volcano-Bay.webp'
+        u1:'asset/presu/cabana-bay.jpg',
+        u2:'asset/presu/endless-summer-dockside.jpg',
+        u3:'asset/presu/terra-luna.jpg'
       };
       var uRevEl = document.querySelector('#rev-'+uniRows[j]+' .hc-desc');
       hotelUni = {
