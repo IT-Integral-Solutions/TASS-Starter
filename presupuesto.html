@@ -2300,11 +2300,10 @@ function buildPDFSummary(){
 
   // ── Datos del header ──────────────────────────────────────────────
   var clienteEl = document.getElementById('hdr-cliente');
-  var viajeEl   = document.getElementById('hdr-viaje');
-  var fechaEl   = document.getElementById('hdr-fecha');
   var cliente = clienteEl ? clienteEl.textContent : '';
-  var viaje   = viajeEl   ? viajeEl.textContent   : '';
-  var fecha   = fechaEl   ? fechaEl.textContent   : '';
+  var hdrMetaVals = document.querySelectorAll('.pres-header .hdr-meta .hdr-val');
+  var viajeros = hdrMetaVals[1] ? hdrMetaVals[1].textContent.trim() : '';
+  var periodo  = hdrMetaVals[2] ? hdrMetaVals[2].textContent.trim() : '';
 
   // ── Parques Disney activos ─────────────────────────────────────────
   var disneyParques = [];
@@ -2559,12 +2558,12 @@ function buildPDFSummary(){
   html += '<div style="font-family:\'Dancing Script\',cursive;font-size:13px;color:rgba(255,255,255,.55);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">✦  Propuesta de Viaje Personalizada  ✦</div>';
   html += '<div style="font-family:\'Playfair Display\',serif;font-size:26px;font-weight:700;color:#E8C96A;line-height:1.2;">Presupuesto <em style=\"font-style:italic;\">Orlando</em></div>';
   html += '<div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:2px;">Disney · Universal · 2026</div>';
+  html += '<div style="height:1px;background:linear-gradient(90deg,transparent,rgba(200,168,75,.35) 18%,rgba(200,168,75,.6) 50%,rgba(200,168,75,.35) 82%,transparent);margin:14px 0 10px;"></div>';
+  html += '<div style="display:flex;align-items:center;gap:28px;flex-wrap:wrap;">';
+  if(cliente)  html += '<div style="display:flex;align-items:baseline;gap:8px;"><span style="font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:rgba(200,168,75,.62);">Para:</span><span style="font-size:13px;font-weight:700;color:white;">'+cliente+'</span></div>';
+  if(viajeros) html += '<div style="display:flex;align-items:baseline;gap:8px;"><span style="font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:rgba(200,168,75,.62);">Viajeros:</span><span style="font-size:13px;font-weight:700;color:white;">'+viajeros+'</span></div>';
+  if(periodo)  html += '<div style="display:flex;align-items:baseline;gap:8px;"><span style="font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:rgba(200,168,75,.62);">Período:</span><span style="font-size:13px;font-weight:700;color:white;">'+periodo+'</span></div>';
   html += '</div>';
-  html += '<div style="text-align:right;border-left:1.5px solid rgba(200,168,75,.25);padding-left:24px;">';
-  html += '<div style="font-size:8.5px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:6px;">Preparado para</div>';
-  if(cliente) html += '<div style="font-family:\'Playfair Display\',serif;font-size:14px;font-weight:700;color:white;">'+cliente+'</div>';
-  if(viaje) html += '<div style="font-size:10px;color:rgba(255,255,255,.55);margin-top:3px;">'+viaje+'</div>';
-  if(fecha) html += '<div style="font-size:10px;color:rgba(255,255,255,.55);margin-top:2px;">'+fecha+'</div>';
   html += '</div>';
   html += '</div>';
 
