@@ -1368,7 +1368,6 @@ body.edit-on .price-edit-panel{display:flex;flex-wrap:wrap;align-items:center;}
   display:grid;
   grid-template-columns:1fr 1fr;
   gap:10px;
-  break-inside:avoid;
 }
 .pdf-park-card{
   border-radius:10px;
@@ -1465,7 +1464,6 @@ body.edit-on .price-edit-panel{display:flex;flex-wrap:wrap;align-items:center;}
   border-radius:8px;
   padding:10px 14px;
   margin-bottom:10px;
-  break-inside:avoid;
 }
 .pdf-date-item .d-lbl{
   font-size:8px;
@@ -3108,58 +3106,154 @@ function abrirItinerario(){
   window.open(url, '_blank');
 }
 
+function imgToBase64(url, cb) {
+  // Convierte una URL de imagen a base64 usando un canvas del browser
+  // Esto evita problemas de CORS en html2canvas
+  var img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = function() {
+    var canvas = document.createElement('canvas');
+    canvas.width  = img.naturalWidth  || img.width;
+    canvas.height = img.naturalHeight || img.height;
+    var ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    try { cb(canvas.toDataURL('image/jpeg', 0.85)); }
+    catch(e) { cb(url); } // fallback: usar URL original
+  };
+  img.onerror = function() { cb(''); };
+  img.src = url + (url.indexOf('?') >= 0 ? '&_t=' : '?_t=') + Date.now();
+}
+
+function reemplazarImagenesDOM(el, cb) {
+  // Reemplaza src de todas las <img> dentro de el con base64
+  var imgs = el.querySelectorAll('img[src]');
+  var total = imgs.length, done = 0;
+  if (total === 0) { cb(); return; }
+  imgs.forEach(function(img) {
+    var src = img.getAttribute('src');
+    if (!src || src.startsWith('data:')) { done++; if(done===total) cb(); return; }
+    imgToBase64(src, function(b64) {
+      if (b64) img.src = b64;
+      done++;
+      if (done === total) cb();
+    });
+  });
+}
+
 function exportarPDF(){
   var btn = document.getElementById('btn-export');
-  if(btn){ btn.textContent = '⏳ Generando PDF...'; btn.disabled = true; }
+  if(btn){ btn.textContent = '⏳ Preparando...'; btn.disabled = true; }
 
   buildPDFSummary();
 
-  // Dar tiempo al DOM para renderizar
-  setTimeout(function(){
-    var el = document.getElementById('pdf-summary');
-    if(!el){ if(btn){btn.textContent='🖨️ Exportar PDF';btn.disabled=false;} return; }
-
-    // Nombre del archivo
-    var clienteEl = document.getElementById('hdr-cliente');
-    var apellido = clienteEl
-      ? clienteEl.textContent.trim().replace(/^Familia\s*/i,'').replace(/\s+/g,'_')
-      : 'Cliente';
-    var filename = 'Presupuesto_ConMagui_' + apellido + '.pdf';
-
-    var opt = {
-      margin:      [14, 16, 14, 16],   // top, right, bottom, left en mm
-      filename:    filename,
-      image:       { type: 'jpeg', quality: 0.92 },
-      html2canvas: { scale: 2, useCORS: true, logging: false },
-      jsPDF:       { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      pagebreak:   { mode: ['avoid-all', 'css', 'legacy'] }
+  function loadScript(src, cb){
+    if(document.querySelector('script[src="'+src+'"]')){ cb(); return; }
+    var s = document.createElement('script');
+    s.src = src; s.onload = cb;
+    s.onerror = function(){
+      alert('Error cargando librería PDF. Verificá tu conexión.');
+      if(btn){btn.textContent='🖨️ Exportar PDF';btn.disabled=false;}
     };
+    document.head.appendChild(s);
+  }
 
-    function cargarHtml2pdf(cb){
-      if(window.html2pdf){ cb(); return; }
-      var s = document.createElement('script');
-      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-      s.onload = cb;
-      s.onerror = function(){
-        alert('Error al cargar la librería PDF. Verificá tu conexión.');
-        if(btn){btn.textContent='🖨️ Exportar PDF';btn.disabled=false;}
-      };
-      document.head.appendChild(s);
-    }
+  loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', function(){
+    loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', function(){
 
-    cargarHtml2pdf(function(){
-      // Mostrar el elemento temporalmente para captura
-      el.style.display = 'block';
-      html2pdf().set(opt).from(el).save().then(function(){
-        el.style.display = 'none';
-        if(btn){btn.textContent='🖨️ Exportar PDF';btn.disabled=false;}
-      }).catch(function(err){
-        console.error('Error PDF:', err);
-        el.style.display = 'none';
-        if(btn){btn.textContent='🖨️ Exportar PDF';btn.disabled=false;}
-      });
+      var el = document.getElementById('pdf-summary');
+      if(!el){ if(btn){btn.textContent='🖨️ Exportar PDF';btn.disabled=false;} return; }
+
+      // Mostrar para captura
+      el.style.display    = 'block';
+      el.style.position   = 'fixed';
+      el.style.top        = '-99999px';
+      el.style.left       = '0';
+      el.style.width      = '780px';
+      el.style.maxWidth   = '780px';
+      el.style.zIndex     = '-1';
+
+      if(btn) btn.textContent = '⏳ Cargando imágenes...';
+
+      // Convertir todas las imágenes a base64 ANTES de capturar
+      reemplazarImagenesDOM(el, function(){
+        if(btn) btn.textContent = '⏳ Generando PDF...';
+
+        html2canvas(el, {
+          scale:       2,
+          useCORS:     true,
+          allowTaint:  false,
+          backgroundColor: '#ffffff',
+          width:       780,
+          windowWidth: 780,
+          logging:     false,
+          imageTimeout: 0,
+          onclone: function(doc) {
+            // En el clon, forzar que las imágenes roten con src base64
+            doc.querySelectorAll('#pdf-summary img').forEach(function(img){
+              var orig = el.querySelector('img[alt="'+img.alt+'"]');
+              if(orig && orig.src.startsWith('data:')) img.src = orig.src;
+            });
+          }
+        }).then(function(canvas){
+
+          // Restaurar estilos
+          el.style.display = 'none';
+          el.style.position = '';
+          el.style.top = '';
+          el.style.left = '';
+          el.style.width = '';
+          el.style.maxWidth = '';
+          el.style.zIndex = '';
+
+          var jsPDF = window.jspdf.jsPDF;
+          var pdf  = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+          var pgW  = pdf.internal.pageSize.getWidth();   // 210mm
+          var pgH  = pdf.internal.pageSize.getHeight();  // 297mm
+          var mX   = 12, mY = 12;
+          var printW = pgW - mX * 2;
+
+          var cW  = canvas.width;
+          var cH  = canvas.height;
+          var ratio  = printW / cW;         // mm por px
+          var sliceH = Math.floor((pgH - mY * 2) / ratio); // px por página
+
+          var pageCount = Math.ceil(cH / sliceH);
+
+          for(var p = 0; p < pageCount; p++){
+            if(p > 0) pdf.addPage();
+            var y0 = p * sliceH;
+            var h  = Math.min(sliceH, cH - y0);
+
+            var slice = document.createElement('canvas');
+            slice.width  = cW;
+            slice.height = h;
+            var ctx = slice.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, cW, h);
+            ctx.drawImage(canvas, 0, y0, cW, h, 0, 0, cW, h);
+
+            var imgData = slice.toDataURL('image/jpeg', 0.92);
+            var hMM = h * ratio;
+            pdf.addImage(imgData, 'JPEG', mX, mY, printW, hMM);
+          }
+
+          var clienteEl = document.getElementById('hdr-cliente');
+          var apellido = clienteEl
+            ? clienteEl.textContent.trim().replace(/^Familia\s*/i,'').replace(/\s+/g,'_')
+            : 'Cliente';
+          pdf.save('Presupuesto_ConMagui_' + apellido + '.pdf');
+
+          if(btn){btn.textContent='🖨️ Exportar PDF';btn.disabled=false;}
+
+        }).catch(function(err){
+          console.error('Error PDF:', err);
+          el.style.display = 'none';
+          if(btn){btn.textContent='🖨️ Exportar PDF';btn.disabled=false;}
+          alert('Error al generar el PDF. Intentá de nuevo.');
+        });
+      }); // fin reemplazarImagenesDOM
     });
-  }, 500);
+  });
 }
 </script>
 <footer style="background:#0B1628;padding:28px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-top:40px;print-color-adjust:exact;-webkit-print-color-adjust:exact;">
