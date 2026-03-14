@@ -2989,6 +2989,11 @@ function buildPDFSummary(){
 
   html += '</div>'; // fin gradient box
 
+  // ── Nota de servicios que se financian aparte ───────────────────────
+  html += '<div style="background:#F8F8FF;border:1.5px dashed #C8B0DC;border-radius:8px;padding:8px 12px;font-size:9px;color:#555;margin-bottom:10px;">';
+  html += 'ℹ️ <strong>Lightning Lane</strong>, <strong>Bibbidi Bobbidi Boutique</strong>, <strong>Crucero Disney</strong> y <strong>comida con personajes</strong> se abonan de forma independiente y no impactan en las cuotas del paquete principal.';
+  html += '</div>';
+
   // ── Cards de condiciones por paquete ──────────────────────────────────
   html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">';
 
@@ -3024,26 +3029,7 @@ function buildPDFSummary(){
     html += '</div>';
   }
 
-  // Si solo hay un destino, llenar el segundo espacio con nota de LL/Crucero
-  if(!(_hasDis && _hasUni)){
-    html += '<div style="background:#F8F8FF;border:1.5px dashed #C8B0DC;border-radius:10px;padding:11px 13px;">';
-    html += '<div style="font-family:\'Playfair Display\',serif;font-size:10.5px;font-weight:700;color:#3D1F6A;margin-bottom:6px;">ℹ️ Se financian aparte</div>';
-    html += '<div style="font-size:9px;color:#666;line-height:1.8;">';
-    html += '<div>⚡ <strong>Lightning Lane</strong> — se abona directamente</div>';
-    html += '<div>🚢 <strong>Crucero Disney</strong> — tiene su propio plan de pago</div>';
-    html += '<div style="margin-top:4px;font-style:italic;opacity:.75;">No impactan en las cuotas del paquete principal.</div>';
-    html += '</div>';
-    html += '</div>';
-  }
-
   html += '</div>'; // fin grid cards
-
-  // Si hay ambos destinos, agregar nota aparte de LL/Crucero
-  if(_hasDis && _hasUni){
-    html += '<div style="background:#F8F8FF;border:1.5px dashed #C8B0DC;border-radius:8px;padding:8px 12px;font-size:9px;color:#555;margin-bottom:10px;">';
-    html += 'ℹ️ <strong>Lightning Lane</strong> y <strong>Crucero Disney</strong> se abonan de forma independiente y no impactan en las cuotas del paquete principal.';
-    html += '</div>';
-  }
 
   // Disclaimer precios
   html += '<div style="background:#FBF7E8;border:1.5px solid #E8D8A0;border-left:4px solid #C8A84B;border-radius:8px;padding:8px 12px;font-size:9px;color:#5A4010;line-height:1.7;">';
